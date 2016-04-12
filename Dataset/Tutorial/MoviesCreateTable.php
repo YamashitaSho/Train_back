@@ -1,5 +1,5 @@
 <?php
-require '../../vendor/autoload.php';
+require '../vendor/autoload.php';
 
 $sdk = new Aws\Sdk([
 //    'endpoint'   => 'https://dynamodb.ap-northeast-1.amazonaws.com',
@@ -10,36 +10,26 @@ $sdk = new Aws\Sdk([
 $dynamodb = $sdk->createDynamoDb();
 
 $params = [
-    'TableName' => 'a_battles',
+    'TableName' => 'Movies',
     'KeySchema' => [
         [
-            'AttributeName' => 'user_id',
+            'AttributeName' => 'year',
             'KeyType' => 'HASH'  //Partition key
         ],
         [
-            'AttributeName' => 'battle_id',
+            'AttributeName' => 'title',
             'KeyType' => 'RANGE'  //Sort key
         ]
     ],
     'AttributeDefinitions' => [
         [
-            'AttributeName' => 'type',
+            'AttributeName' => 'year',
+            'AttributeType' => 'N'
+        ],
+        [
+            'AttributeName' => 'title',
             'AttributeType' => 'S'
         ],
-        [
-            'AttributeName' => 'is_win',
-            'AttributeType' => 'BOOL'
-        ],
-        [
-            'AttributeName' => 'is_win',
-            'AttributeType' => 'BOOL'
-        ],
-        [
-            'AttributeName' => 'is_win',
-            'AttributeType' => 'BOOL'
-        ],
-
-
     ],
     'ProvisionedThroughput' => [
         'ReadCapacityUnits' => 10,

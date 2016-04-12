@@ -1,0 +1,94 @@
+[
+  {
+    "enemyparty_id": 0,
+    "text": "テストPT0",
+    "party": [
+      {
+        "enemy_id": 1,
+        "item_id": 0
+      },
+      {
+        "enemy_id": 2,
+        "item_id": 0
+      },
+      {
+        "enemy_id": 3,
+        "item_id": 0
+      }
+    ],
+    "quests": [
+      {
+        "weight": 100
+      }
+    ]
+  },
+  {
+    "enemyparty_id": 1,
+    "text": "テストPT1",
+    "party": [
+      {
+        "enemy_id": 4,
+        "item_id": 0
+      },
+      {
+        "enemy_id": 5,
+        "item_id": 0
+      },
+      {
+        "enemy_id": 6,
+        "item_id": 0
+      }
+    ],
+    "quests": [
+      {
+        "weight": 100
+      }
+    ]
+  },
+  {
+    "enemyparty_id": 2,
+    "text": "テストPT2",
+    "party": [
+      {
+        "enemy_id": 7,
+        "item_id": 0
+      },
+      {
+        "enemy_id": 8,
+        "item_id": 0
+      },
+      {
+        "enemy_id": 9,
+        "item_id": 0
+      }
+    ],
+    "quests": [
+      {
+        "weight": 100
+      }
+    ]
+  },
+  {
+    "enemyparty_id": 3,
+    "text": "テストPT3",
+    "party": [
+      {
+        "enemy_id": 10,
+        "item_id": 0
+      },
+      {
+        "enemy_id": 11,
+        "item_id": 0
+      },
+      {
+        "enemy_id": 12,
+        "item_id": 0
+      }
+    ],
+    "quests": [
+      {
+        "weight": 100
+      }
+    ]
+  }
+]

@@ -1,0 +1,158 @@
+[
+{
+  "enemy_id": 0,
+  "char_id": 0,
+  "level": 0,
+  "name": "テスト",
+  "status": {
+    "attack": 0,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 1,
+  "char_id": 1,
+  "level": 0,
+  "name": "テスト",
+  "status": {
+    "attack": 10,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 2,
+  "char_id": 2,
+  "level": 0,
+  "name": "テスト",
+  "status": {
+    "attack": 20,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 3,
+  "char_id": 3,
+  "level": 0,
+  "name": "テスト",
+  "status": {
+    "attack": 30,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 4,
+  "char_id": 4,
+  "level": 0,
+  "name": "テスト",
+  "status": {
+    "attack": 40,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 5,
+  "char_id": 5,
+  "level": 0,
+  "name": "テスト",
+  "status": {
+    "attack": 50,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 6,
+  "char_id": 6,
+  "level": 0,
+  "name": "テスト",
+  "status": {
+    "attack": 60,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 7,
+  "char_id": 7,
+  "level": 0,
+  "name": "テスト",
+  "status": {
+    "attack": 70,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 8,
+  "char_id": 8,
+  "level": 0,
+  "name": "テスト",
+  "status": {
+    "attack": 80,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 9,
+  "char_id": 9,
+  "level": 0,
+  "name": "テスト",
+  "status": {
+    "attack": 90,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 10,
+  "char_id": 10,
+  "level": 0,
+  "name": "テスト",
+  "status": {
+    "attack": 100,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 11,
+  "char_id": 11,
+  "level": 0,
+  "name": "テスト",
+  "status": {
+    "attack": 110,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 12,
+  "char_id": 12,
+  "level": 0,
+  "name": "テスト",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+}
+]

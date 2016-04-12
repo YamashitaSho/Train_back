@@ -13,13 +13,13 @@ class Stage extends Controller
     {
     	$myModel = new StageLogic();
         $result = $myModel->getBattlelist();
-        return response(json_encode($result[0]),$result[1]);
+        return \Response::json($result[0],$result[1]);
     }
     public function store()
     {
     	$myModel = new StageLogic();
         $result = $myModel->joinBattle();
-        return response(json_encode($result[0]),$result[1]);
+        return \Response::json($result[0],$result[1]);
     }
 }
 
