@@ -9,94 +9,109 @@ use Aws\DynamoDb\Marshaler;
 
 class Resultlogic extends Model
 {
-	private $dynamodb;
-	private $marshaler;
-	public function __construct()
-	{
-		$sdk = new \Aws\Sdk([
-		    'region'   => 'ap-northeast-1',
-		    'version'  => 'latest'
-		]);
-		date_default_timezone_set('UTC');
-		$this->dynamodb = $sdk->createDynamoDb();
-		$this->marshaler = new Marshaler();
-	}
-	public function getResult($battle_id)
-	{
-		//指定されたバトルの結果を読み込み送信、該当バトルのステータスを終了済みに変更する
-		/*
-		$tableName = 'Movies';
-		$eav = $this->marshaler->marshalJson('
-		    {
-		        ":yyyy": 1985
-		    }
-		');
+    private $dynamodb;
+    private $marshaler;
+    public function __construct()
+    {
+        $sdk = new \Aws\Sdk([
+            'region'   => 'ap-northeast-1',
+            'version'  => 'latest'
+        ]);
+        date_default_timezone_set('UTC');
+        $this->dynamodb = $sdk->createDynamoDb();
+        $this->marshaler = new Marshaler();
+        $this->userinfo = new UserInfo();
+        $this->record = new Record();
+    }
+    /**
+    * [API] バトル結果表示、反映のAPI
+    *
+    */
+    public function getResult($battle_id)
+    {
+        //進行中のバトルについて、戦闘終了情報が入力されるか5ターン経過するまでのデータを取得し、送信する。
+        $user_id = $this->userinfo->getUserID();
+        $user = $this->userinfo->getUserStatus($user_id);
 
-		$params = [
-		    'TableName' => $tableName,
-		    'KeyConditionExpression' => '#yr = :yyyy',
-		    'ExpressionAttributeNames'=> [ '#yr' => 'year' ],
-		    'ExpressionAttributeValues'=> $eav
-		];
+        $get_item_array = [
+            'TableName' => 'a_battles',
+            'Key' => [
+                'user_id' => [
+                    'N' => (string)$user_id
+                ],
+                'battle_id' => [
+                    'N' => (string)$battle_id
+                ]
+            ]
+        ];
+        #バトルデータの読み出し
+        try {
+            $result = $this->dynamodb->getItem($get_item_array);
+        } catch (DynamoDbException $e) {
+            echo $e->getMessage() . '\n';
+            return ['status: Failed to get BattleLog', 500];
+        }
+        $data = $this->marshaler->unmarshalItem($result['Item']);
+        if ($data['progress'] != 'in_process'){
+            return ['status: Battle is NOT in Process', 400];
+        }
+        $data['progress'] = 'closed';               #ステータスを終了済みにする
+        $data['record'] = $this->record->updateRecordStatus($data['record']);
+        #キャラデータ更新
+        for ($i = 0; $i < count($data['obtained']['chars']) ; $i++){
+            try {
+                $result = $this->dynamodb->getItem([
+                    'TableName' => 'a_chars',
+                    'Key' => $this->marshaler->marshalItem([
+                        'user_id' => (int)$user_id,
+                        'char_id' => (int)$data['obtained']['chars'][$i]['char_id']
+                    ]),
+                ]);
+            } catch (DynamoDbException $e) {
+                echo $e->getMessage();
+                return ['status: Failed to get Chardata', 500];
+            }
+            $char = $data['obtained']['chars'][$i];
+            $char['user_id'] = $user_id;
+            $char['record'] = $this->record->updateRecordStatus($this->marshaler->unmarshalItem($result['Item'])['record']);
 
-//		echo "Querying for movies from 1985.\n";
+            try{
+                $result = $this->dynamodb->putItem([
+                    'TableName' => 'a_chars',
+                    'Key' => $this->marshaler->marshalItem([
+                        'user_id' => (int)$user_id,
+                        'char_id' => (int)$char['char_id']
+                    ]),
+                    'Item' => $this->marshaler->marshalItem($char)
+                ]);
+            } catch (DynamoDbException $e) {
+                echo $e->getMessage();
+                return ['status: Failed to update Chardata', 500];
+            }
+        }
 
-		try {
-		    $result = $this->dynamodb->query($params);
-
-		 //   echo $result;
-
-		    foreach ($result['Items'] as $movie) {
-		        echo $this->marshaler->unmarshalValue($movie['year']) . ': ' .
-		            $this->marshaler->unmarshalValue($movie['title']) . "<br />";
-		    /
-
-		    $buf = array();
-		    $json = array();
-		     foreach ($result['Items'] as $key=>$movie) {
-		     //	dd ($movie);
-		        $buf['year'] = $this->marshaler->unmarshalValue($movie['year']);
-		        $buf['title'] = $this->marshaler->unmarshalValue($movie['title']);
-		        $buf['actors'] = $this->marshaler->unmarshalValue($movie['info']['M']['actors']);
-		        $json[] = $buf;
-		    }
-
-		    echo json_encode($json);
-
-		} catch (DynamoDbException $e) {
-		    echo "Unable to query:\n";
-		    echo $e->getMessage() . "\n";
-		}
-		*/
-
-        $response = array(
-            "is_win" => true,
+        #バトルデータ更新
+        try{
+            $result = $this->dynamodb->putItem([
+                'TableName' => 'a_battles',
+                'Key' => $this->marshaler->marshalItem([
+                    'user_id' => (int)$user_id,
+                    'battle_id' => (int)$data['battle_id']
+                ]),
+                'Item' => $this->marshaler->marshalItem($data),
+            ]);
+        } catch (DynamoDbException $e) {
+            echo $e->getMessage();
+            return ['status: Failed to update Battlelog', 500];
+        }
+        $response = [
+            "is_win" => $data['is_win'],
             "get_item" => "",
-            "money" => 3150,
+            "money" => $user['money'],
             "prize" => 150,
-            "chars" => array(
-                array(
-                    "char_id" => 2,
-                    "name" => "丑",
-                    "attack" => 25,
-                    "endurance" => 45,
-                    "agility" => 30,
-                    "debuf" => 15,
-                    "exp" => 50,
-                    "level" => 4
-                )
-            ),
-            "chars_up" => array(
-                array(
-                    "attack" => 1,
-                    "endurance" => 2,
-                    "agility" => 0,
-                    "debuf" => 1,
-                    "exp" => 64,
-                    "level" => 1
-                )
-            )
-        );
+            "chars" => $data['friend_position'],
+            "obtained" => $data['obtained']['chars'],
+        ];
         return array($response, 201);
     }
 }

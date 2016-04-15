@@ -1,5 +1,5 @@
 <?php
-require '../vendor/autoload.php';
+require 'vendor/autoload.php';
 
 $sdk = new Aws\Sdk([
 //    'endpoint'   => 'https://dynamodb.ap-northeast-1.amazonaws.com',
@@ -17,32 +17,22 @@ use Aws\DynamoDb\Marshaler;
 $dynamodb = $sdk->createDynamoDb();
 $marshaler = new Marshaler();
 
-$tableName = 'Movies';
+$tableName = 'enemies';
 
-$movies = json_decode(file_get_contents('moviedata.json'), true);
+$data = json_decode(file_get_contents('Dataset/Data/enemies.json'), true);
 
-foreach ($movies as $movie) {
-
-    $year = $movie['year'];
-    $title = $movie['title'];
-    $info = $movie['info'];
-
-    $json = json_encode([
-        'year' => $year,
-        'title' => $title,
-        'info' => $info
-    ]);
+foreach ($data as $record) {
 
     $params = [
         'TableName' => $tableName,
-        'Item' => $marshaler->marshalJson($json)
+        'Item' => $marshaler->marshalItem($record)
     ];
 
     try {
         $result = $dynamodb->putItem($params);
-        echo "Added movie: " . $movie['year'] . " " . $movie['title'] . "\n";
+        echo "Added enemy_id:".$record['enemy_id']."\n";
     } catch (DynamoDbException $e) {
-        echo "Unable to add movie:\n";
+        echo "Failed to Add Data:\n";
         echo $e->getMessage() . "\n";
         break;
     }

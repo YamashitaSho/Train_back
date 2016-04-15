@@ -8,18 +8,20 @@ use App\Http\Requests;
 use App\Http\Controllers\Controller;
 class Battle extends Controller
 {
-
     public function show($battle_id)
     {
-    	$myModel = new BattleLogic();
-        $result = $myModel->turnoverBattle($battle_id);
-        return response(json_encode($result[0],JSON_PRETTY_PRINT),$result[1]);
+    #    $user_id = \Session->getUserID();
+        $result = $this->getModel()->turnoverBattle($battle_id);
+        return \Response::json($result[0],$result[1]);
     }
 
     public function update($battle_id)
     {
-    	$myModel = new BattleLogic();
-        $result = $myModel->setBattle($battle_id);
-        return response(json_encode($result[0], JSON_PRETTY_PRINT),$result[1]);
+        $result = $this->getModel()->setBattle($battle_id);
+        return \Response::json($result[0],$result[1]);
+    }
+    private function getModel()
+    {
+        return new BattleLogic();
     }
 }

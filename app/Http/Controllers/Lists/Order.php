@@ -13,14 +13,14 @@ class Order extends Controller
     {
     	$myModel = new OrderLogic();
         $result = $myModel->getOrder();
-        return response(json_encode($result[0]),$result[1]);
+        return \Response::json($result[0],$result[1]);
     }
 
     public function update($type)
     {
     	$myModel = new OrderLogic();
         $result = $myModel->changeOrder($type);
-        return response(json_encode($result[0]),$result[1]);
+        return \Response::json($result[0],$result[1]);
 
     }
 }

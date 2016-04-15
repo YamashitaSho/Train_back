@@ -12,6 +12,6 @@ class Menu extends Controller
     {
     	$myModel = new MenuLogic();
     	$result = $myModel->getMenu();
-    	return response(json_encode($result[0]),$result[1]);
+    	return \Response::json($result[0],$result[1]);
     }
 }
