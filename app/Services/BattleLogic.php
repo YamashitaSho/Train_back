@@ -9,52 +9,70 @@ use App\Models\UserModel;
 
 class BattleLogic extends Model
 {
-    private $CHARS_NUM = 3;  #隊列内のキャラ数
+    private $CHARS_NUM = 3;     #隊列内のキャラ数
     private $TURN_MAX = 5;
+
+    private $INITIAL_HP = 300;  #初期HP
 
     public function __construct()
     {
         $this->battle = new BattleModel();
         $this->userinfo = new UserModel();
     }
-    public function setBattle($battle_id)
+    /**
+    * [API] バトル経過生成APIのServiceクラス
+    *
+    * usersテーブルにあるbattle_idのバトルを進行し、バトルの初期状態を返す。
+    * 該当バトルのステータスを確認し、createdでなければ進行しない。
+    * @return $response : [ (array or string), STATUS_CODE ]
+    */
+    public function setBattle($battle_id = 0)
     {
-        //該当バトルIDの戦闘を進行する。
-        //該当バトルのステータスを進行中に変更し、キャラのステータスに反映する
-        //該当バトルが進行中だった場合はバトル開始情報のみを送信する
-        //終了済みだった場合はエラーを返す
+        #ユーザー情報の取得
         $user = $this->userinfo->getUser();
+        #紐付いたバトル情報の取得
         $battle = $this->battle->getBattle($user);
-        # バトル進行状態のチェック
+
+        $response = [];
+        # バトルの進行状態における分岐
         if ($battle['progress'] == 'created'){
-            #created: 通常の進行
-            $battle['progress'] = "in_process";
+            #created: バトルの進行データを作成し、初期状態を送信
+            $battle['progress'] = 'in_process';
+            $response = [$battle, 201];              #初期状態
+            #バトル進行データを作成
+            $battle = $this->battleMain($battle);
+            #バトル結果を書き込み
+            $this->battle->writeBattle($user, $battle);
+
         } else if ( $battle['progress'] == 'in_process'){
-            #in process: ログがすでにあるはずなのでデータをそのまま送信
-            return [$battle, 201];
+            #in process: 保存されていたデータを返す
+            $response = [$battle, 201];
+
         } else if ( $battle['progress'] == 'closed'){
-            #closed すでに結果表示を終えた戦闘なのでエラーを返す
-            return ['status: Already Closed Battle', 400];
+            #closed: 終了した戦闘 のエラーを返す
+            $response = ['status: Already Closed Battle', 400];
+
         };
-        $response = $this->battleMain($battle);
-        $response['is_win'] = $this->getWhichVictory($response);
-        $response['obtained'] = $this->setObtained($response);
-       # dd($response);
-        $this->battle->writeBattle($user, $response);
-        return [$battle, 201];
+
+        return $response;
     }
+    /**
+    * [API] ターン経過取得APIのServiceクラス
+    *
+    * userに紐付いているバトルについて、戦闘ログとして記録されているデータを返す。
+    * ステータスがin_processでなかった場合はエラーを返す。
+    */
     public function turnoverBattle($battle_id)
     {
-        //進行中のバトルについて、戦闘終了情報が入力されるか5ターン経過するまでのデータを取得し、送信する。
         $user = $this->userinfo->getUser();
         $battle = $this->battle->getBattle($user);
 
         if ($battle['progress'] == 'in_process'){
-            $response = $battle['log'];
+            $response = [$battle['log'], 200];
         } else {
-            return ['status: Battle is NOT in Process', 400];
+            $response = ['status: Battle is NOT in Process', 400];
         }
-    return [$response, 200];
+    return $response;
     }
     /**
     * バトルキャラ設定
@@ -76,17 +94,21 @@ class BattleLogic extends Model
         return $response;
     }
     /**
-    * バトルの実処理
+    * バトルの進行データ作成処理
     */
     private function battleMain($battle)
     {
+        #参加キャラデータを一つのリストに変形
         $battle_chars = $this->setBattleChar($battle);
-        #    print_r($battle_chars);
+        # 0ターン目のログ: 戦闘開始時のデータ
         $battle_log[0] = $this->setupBattle($battle);
 
         $turn = 0;
+        # 現在のターンが戦闘終了条件を満たしていない場合、次のターンに進む
         while ( $battle_log[$turn]['is_last_turn'] == false ){
+            # ターンを進める
             $turn++;
+            # 現在のターンのログを生成する
             $battle_log[$turn] = $this->turnBattle($battle_chars, $battle_log[$turn - 1]);
             # TURN_MAXに達していれば終了フラグを立てて抜ける
             if ($turn == $this->TURN_MAX){
@@ -94,8 +116,14 @@ class BattleLogic extends Model
                 break;
             }
         }
+        #バトルの進行データを初期データに追加
         $battle['log'] = $battle_log;
+        #バトルの勝敗を取得
+        $battle['is_win'] = $this->getIsVictory($battle);
+        #バトル結果のステータス変化を追加
+        $battle['obtained'] = $this->setObtained($battle);
 
+        #受け取った引数と同じ形式で返す
         return $battle;
     }
     /**
@@ -104,12 +132,12 @@ class BattleLogic extends Model
     */
     private function setupBattle($battle_party)
     {
+        # 初期HP設定
         $battle_log = [
             'is_last_turn' => false,
-            'friend_hp' => 1000,
-            'enemy_hp' => 1000
+            'friend_hp' => $this->INITIAL_HP,
+            'enemy_hp' => $this->INITIAL_HP
         ];
-        #初期HP設定
         foreach ($battle_party['friend_position'] as $friend){
             $battle_log['friend_hp'] += $friend['status']['endurance'];
         }
@@ -160,6 +188,8 @@ class BattleLogic extends Model
     }
     /**
     * キャラの行動ログ生成
+    * @param &$log   : ターンごとのログ $target['hp']要素にアクセスし、HPを更新する
+    * @param &$chars : キャラのステータス デバフとして攻撃力を下げる
     */
     private function actionChar($active_char, &$log ,&$chars)
     {
@@ -177,6 +207,7 @@ class BattleLogic extends Model
         for ($i=0 ; $i<3 ; $i++){
             $debuf = $this->setRandom($active_char['debuf']/2);
             $action['debuf'][$i] = $debuf;
+
             $target_attack = &$chars[ $i+$target['position'] ]['status']['attack'];
             $target_attack -= $debuf;
             if ($target_attack < 0 ){
@@ -205,7 +236,7 @@ class BattleLogic extends Model
     * 勝敗を取得する
     * 味方が勝っていればtrue 敵が勝っていればfalse
     */
-    private function getWhichVictory($battle)
+    private function getIsVictory($battle)
     {
         $turn_num = count($battle['log']);
         $last_turn = $battle['log'][$turn_num - 1];
