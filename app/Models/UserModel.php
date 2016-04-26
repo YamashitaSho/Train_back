@@ -18,6 +18,7 @@ class UserModel extends DynamoDBHandler
         parent::__construct();
 
         $this->user_id = 1;               #セッションから取得する
+        $this->user = [];
 
     }
 
@@ -32,15 +33,18 @@ class UserModel extends DynamoDBHandler
     {
         #userIDに紐づけられた基本情報をDBから取得する
         #$user_id = $this->user_id;
-        $get = [
-            'TableName' => 'a_users',
-            'Key' => [
-                'user_id' => [
-                    'N' => (string)$this->user_id
+        if (empty($this->user)){
+            $get = [
+                'TableName' => 'a_users',
+                'Key' => [
+                    'user_id' => [
+                        'N' => (string)$this->user_id
+                    ]
                 ]
-            ]
-        ];
-        $this->user = $this->getItem($get,'Failed to Get UserStatus');
+            ];
+            $this->user = $this->getItem($get,'Failed to Get UserStatus');
+        }
+
         return $this->user;
     }
 }
