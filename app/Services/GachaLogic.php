@@ -86,16 +86,21 @@ class GachaLogic extends Model
             $prize_char = $this->gacha->readPrize($prize_id);
 
             #DBの更新
-            $this->gacha->putGachaResult($user, $prize_char, $gacha_cost);
+            $result = $this->gacha->putGachaResult($user, $prize_char, $gacha_cost);
 
-            $response = [
-                [
-                    'char_id' => $prize_char['char_id'],
-                    'name' => $prize_char['name'],
-                    'status' => $prize_char['status']
-                ],
-                201
-            ];
+            if ($result){
+                $response = [
+                    [
+                        'char_id' => $prize_char['char_id'],
+                        'name' => $prize_char['name'],
+                        'status' => $prize_char['status']
+                    ],
+                    201
+                ];
+            } else {
+                #トランザクションが失敗
+                $response = ['Service Unavailable', 503];
+            }
         } else {
             $response = ['Gacha is Unavailable', 400];
         }
