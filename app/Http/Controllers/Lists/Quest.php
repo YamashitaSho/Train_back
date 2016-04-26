@@ -12,6 +12,6 @@ class Quest extends Controller
     {
     	$myModel = new QuestLogic();
     	$result = $myModel->joinQuest();
-        return response(json_encode($result[0]),$result[1]);
+        return \Response::json($result[0],$result[1]);
     }
 }

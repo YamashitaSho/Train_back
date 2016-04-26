@@ -13,13 +13,13 @@ class Gacha extends Controller
     {
     	$myModel = new GachaLogic();
         $result = $myModel->checkGacha();
-        return response(json_encode($result[0]),$result[1]);
+        return \Response::json($result[0],$result[1]);
     }
 
     public function store()
     {
     	$myModel = new GachaLogic();
         $result = $myModel->drawGacha();
-        return response(json_encode($result[0]),$result[1]);
+        return \Response::json($result[0],$result[1]);
     }
 }

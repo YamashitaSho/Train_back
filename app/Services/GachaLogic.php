@@ -4,110 +4,184 @@ namespace App\Services;
 require '../vendor/autoload.php';
 use Illuminate\Database\Eloquent\Model;
 
-use Aws\DynamoDb\Exception\DynamoDbException;
-use Aws\DynamoDb\Marshaler;
+use App\Models\UserModel;
+use App\Models\GachaModel;
 
 class GachaLogic extends Model
 {
-	private $dynamodb;
-	private $marshaler;
-	public function __construct()
-	{
-		$sdk = new \Aws\Sdk([
-		    'region'   => 'ap-northeast-1',
-		    'version'  => 'latest'
-		]);
-		date_default_timezone_set('UTC');
-		$this->dynamodb = $sdk->createDynamoDb();
-		$this->marshaler = new Marshaler();
-	}
+    #残りキャラに応じた代金の変化
+    private $prices = [
+        -1,
+        10000,
+        5000,
+        2000,
+        1000,
+        500,
+        300,
+        200
+    ];
+    private $usermodel;
+    private $gacha;
 
-
-	public function checkGacha()
+    public function __construct()
     {
-        //ガチャが引ける状態かどうかチェックし、情報を送信する
+        $this->gacha = new GachaModel();
+        $this->usermodel = new UserModel();
+    }
 
-        ///DBから読み込む
-        $money = 4800;
-        $rest_char = 4;
+    /**
+    * [関数] ガチャが引けるかどうかをチェックするAPIで呼び出される関数
+    */
+    public function checkGacha()
+    {
+        #ユーザー情報
+        $user = $this->usermodel->getuser();
 
-        $gacha_cost = 1000;            #$rest_charにより決定される
+        #全キャラの重み配列
+        $weights = $this->gacha->readWeight();
+        #手持ちキャラのリスト
+        $own = $this->gacha->readChar($user['user_id']);
+        #実際のガチャ配列
+        $gachabox = $this->makeGachaBox($weights, $own);
+
+        #残りキャラ数
+        $rest_char = $this->getRestChars($gachabox);
+        #ガチャ料金
+        $gacha_cost = $this->getGachaCost($rest_char);
+        #ガチャの可否
+        $availability = $this->getAvailability($user['money'], $gacha_cost, $rest_char);
+        $response = [
+            'availability' => $availability,
+            'rest_char' => $rest_char,
+            'gacha_cost' => $gacha_cost,
+            'money' => $user['money']
+        ];
+        return [$response, 200];
+    }
+
+    /**
+    * [関数] ガチャを引くAPIで呼び出される関数
+    */
+    public function drawGacha()
+    {
+        #ユーザー情報
+        $user = $this->usermodel->getuser();
+
+        #全キャラの重み配列
+        $weights = $this->gacha->readWeight();
+        #手持ちキャラのリスト
+        $own = $this->gacha->readChar($user['user_id']);
+        #実際のガチャ配列
+        $gachabox = $this->makeGachaBox($weights, $own);
+
+        #残りキャラ数
+        $rest_char = $this->getRestChars($gachabox);
+        #ガチャリスト
+        $gacha_cost = $this->getGachaCost($rest_char);
+        #ガチャの可否
+        $availability = $this->getAvailability($user['money'], $gacha_cost, $rest_char);
+
+
+        #獲得キャラのchar_id(抽選する)
+        $prize_id = $this->turnGacha($gachabox);
+
+        #獲得キャラの情報
+        $prize_char = $this->gacha->readPrize($prize_id);
+
+        #DBの更新
+        $this->updateData($prize_char, $user, $gacha_cost);
+
+        $response = [
+            'char_id' => $prize_char['char_id'],
+            'name' => $prize_char['name'],
+            'status' => $prize_char['status']
+        ];
+        return [$response, 201];
+    }
+
+    /**
+    * [関数] ガチャを引く重み配列を作成する
+    *
+    * @param $weights : 全キャラの重み配列(char_idの連想配列)
+    * @param $own_chars : 所持キャラのchar_id情報
+    */
+    private function makeGachaBox($weights, $own_chars)
+    {
+        foreach ($own_chars as $own_char){
+            $weights[$own_char['char_id']] = 0;
+        }
+        $gachabox = $weights;
+        return $gachabox;
+    }
+
+    /**
+    * [関数] ガチャで排出されるキャラの数を配列で返す
+    */
+    private function getRestChars($weights)
+    {
+        $rest_char = 0;
+        foreach ($weights as $weight){
+            if ($weight > 0){
+                $rest_char ++;
+            }
+        }
+
+        return $rest_char;
+    }
+    /**
+    * [関数] ガチャの使用料金を返す
+    */
+    private function getGachaCost($rest_char)
+    {
+        $prices_num = count($this->prices);
+        $gacha_cost = 0;
+        if ( $rest_char >= $prices_num ) {
+            $gacha_cost = $this->prices[ $prices_num - 1 ];
+        } else {
+            $gacha_cost = $this->prices[ $rest_char ];
+        }
+
+        return $gacha_cost;
+    }
+    /**
+    * [関数] ガチャが使用可能かどうか判定する
+    */
+    private function getAvailability($money, $gacha_cost, $rest_char)
+    {
+        $availability = ($money >= $gacha_cost);
         if ($rest_char == 0){
-            $gacha_cost = -1;
+            $availability = false;
         }
-        ///
+        return $availability;
+    }
 
-        $response = array(
-            "availability" => true,
-            "rest_char" => $rest_char,
-            "gacha_cost" => $gacha_cost,
-            "money" => $money
-        );
-
-        #引けない条件を満たした場合はfalse
-        if ( ($money < $gacha_cost) or $rest_char == 0){
-            $response["availability"] = false;
+    /**
+    * [関数] ガチャの抽選を行う
+    * @return $prize_id : 獲得キャラのchar_id
+    */
+    private function turnGacha($gachabox)
+    {
+        $weight_sum = array_sum($gachabox);
+        $gacha_rand = mt_rand(0, $weight_sum);
+        $prize_id = 0;
+        for ($i = 0; $gacha_rand > 0 ; $i++){
+            $prize_id = $i;
+            $gacha_rand -= $gachabox[$i];
         }
+        return $prize_id;
+    }
 
-        return array($response,200);
+    /**
+    * [関数] 料金を徴収、更新処理を行うAPI
+    *
+    * 書き込みに失敗した場合のトランザクション処理も行わなければならない(未実装)。
+    */
+    private function updateData($prize_char, $user, $gacha_cost)
+    {
+        $user['money'] -= $gacha_cost;
+        $this->gacha->writeChar($prize_char, $user['user_id']);
+        $this->gacha->writeUser($user);
 
-	}
-
-
-	public function drawGacha()
-	{
-		//ガチャを引く
-/*		$tableName = 'Movies';
-		$eav = $this->marshaler->marshalJson('
-		    {
-		        ":yyyy": 1992
-		    }
-		');
-
-		$params = [
-		    'TableName' => $tableName,
-		    'KeyConditionExpression' => '#yr = :yyyy',
-		    'ExpressionAttributeNames'=> [ '#yr' => 'year' ],
-		    'ExpressionAttributeValues'=> $eav
-		];
-
-//		echo "Querying for movies from 1985.\n";
-
-		try {
-		    $result = $this->dynamodb->query($params);
-
-		 //   echo $result;
-
-		  /*  foreach ($result['Items'] as $movie) {
-		        echo $this->marshaler->unmarshalValue($movie['year']) . ': ' .
-		            $this->marshaler->unmarshalValue($movie['title']) . "<br />";
-		    }
-
-		    $buf = array();
-		    $json = array();
-		     foreach ($result['Items'] as $key=>$movie) {
-		     //	dd ($movie);
-		        $buf['year'] = $this->marshaler->unmarshalValue($movie['year']);
-		        $buf['title'] = $this->marshaler->unmarshalValue($movie['title']);
-		        $buf['actors'] = $this->marshaler->unmarshalValue($movie['info']['M']['actors']);
-		        $json[] = $buf;
-		    }
-
-		    echo json_encode($json);
-
-		} catch (DynamoDbException $e) {
-		    echo "Unable to query:\n";
-		    echo $e->getMessage() . "\n";
-		}*/
-
-		$response = array(
-			"char_id" => 2,
-			"name" => "丑",
-			"attack" => 25,
-			"endurance" => 45,
-			"agility" => 30,
-			"debuf" => 15
-		);
-		return array($response,201);
-	}
+        return 0;
+    }
 }

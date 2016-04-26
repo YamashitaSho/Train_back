@@ -4,351 +4,317 @@ namespace App\Services;
 require '../vendor/autoload.php';
 use Illuminate\Database\Eloquent\Model;
 
-use Aws\DynamoDb\Exception\DynamoDbException;
-use Aws\DynamoDb\Marshaler;
+use App\Models\BattleModel;
+use App\Models\UserModel;
 
 class BattleLogic extends Model
 {
-	private $dynamodb;
-	private $marshaler;
-	public function __construct()
-	{
-		$sdk = new \Aws\Sdk([
-		    'region'   => 'ap-northeast-1',
-		    'version'  => 'latest'
-		]);
-		date_default_timezone_set('UTC');
-		$this->dynamodb = $sdk->createDynamoDb();
-		$this->marshaler = new Marshaler();
-	}
-	public function setBattle($battle_id)
-	{
-		//該当バトルIDの戦闘を進行する。
-        //戦闘初期状態を読み込み、送信する
-		//該当バトルのステータスを進行中に変更し、キャラのステータスに反映する
-		//該当バトルが進行中だった場合はバトル開始情報のみを送信する
-		//終了済みだった場合はエラーを返す
+    private $CHARS_NUM = 3;     #隊列内のキャラ数
+    private $TURN_MAX = 5;
 
-        #battle_chars 0~2:味方 3~5:敵
-        $battle_chars = array(
-                array(
-                    "position" => "friend1",
-                    "char_id" => 1,
-                    "name" => "子",
-                    "attack" => 50,
-                    "endurance" => 30,
-                    "agility" => 30,
-                    "debuf" => 30,
-                    "exp" => 50,
-                    "level" => 4
-                ),
-                array(
-                    "position" => "friend2",
-                    "char_id" => 2,
-                    "name" => "丑",
-                    "attack" => 50,
-                    "endurance" => 30,
-                    "agility" => 30,
-                    "debuf" => 30,
-                    "exp" => 50,
-                    "level" => 4
-                ),
-                array(
-                    "position" => "friend3",
-                    "char_id" => 3,
-                    "name" => "寅",
-                    "attack" => 50,
-                    "endurance" => 30,
-                    "agility" => 30,
-                    "debuf" => 30,
-                    "exp" => 50,
-                    "level" => 4
-                ),
-                array(
-                    "position" => "enemy1",
-                    "char_id" => 4,
-                    "name" => "卯",
-                    "attack" => 50,
-                    "endurance" => 30,
-                    "agility" => 30,
-                    "debuf" => 30,
-                    "exp" => 50,
-                    "level" => 4
-                ),
-                array(
-                    "position" => "enemy2",
-                    "char_id" => 5,
-                    "name" => "辰",
-                    "attack" => 50,
-                    "endurance" => 30,
-                    "agility" => 30,
-                    "debuf" => 30,
-                    "exp" => 50,
-                    "level" => 4
-                ),
-                array(
-                    "position" => "enemy3",
-                    "char_id" => 6,
-                    "name" => "巳",
-                    "attack" => 50,
-                    "endurance" => 30,
-                    "agility" => 30,
-                    "debuf" => 30,
-                    "exp" => 50,
-                    "level" => 4
-                )
-        );
-        $response = array(
-            "type" => "quest",
-            "is_win" => true,
-            "friend_position" => array(
-                array(
-                    "char_id" => 1,
-                    "name" => "子",
-                    "attack" => 30,
-                    "endurance" => 30,
-                    "agility" => 30,
-                    "debuf" => 30,
-                    "exp" => 50,
-                    "level" => 4
-                ),
-                array(
-                    "char_id" => 2,
-                    "name" => "丑",
-                    "attack" => 30,
-                    "endurance" => 30,
-                    "agility" => 30,
-                    "debuf" => 30,
-                    "exp" => 50,
-                    "level" => 4
-                ),
-                array(
-                    "char_id" => 3,
-                    "name" => "寅",
-                    "attack" => 30,
-                    "endurance" => 30,
-                    "agility" => 30,
-                    "debuf" => 30,
-                    "exp" => 50,
-                    "level" => 4
-                )
-            ),
-            "enemy_position" => array(
-                array(
-                    "char_id" => 4,
-                    "name" => "卯",
-                    "attack" => 30,
-                    "endurance" => 30,
-                    "agility" => 30,
-                    "debuf" => 30,
-                    "exp" => 50,
-                    "level" => 4
-                ),
-                array(
-                    "char_id" => 5,
-                    "name" => "辰",
-                    "attack" => 50,
-                    "endurance" => 30,
-                    "agility" => 30,
-                    "debuf" => 30,
-                    "exp" => 50,
-                    "level" => 4
-                ),
-                array(
-                    "char_id" => 6,
-                    "name" => "巳",
-                    "attack" => 30,
-                    "endurance" => 30,
-                    "agility" => 30,
-                    "debuf" => 30,
-                    "exp" => 50,
-                    "level" => 4
-                )
-            )
-        );
+    private $INITIAL_HP = 300;  #初期HP
 
-        $turndata = array(
-            "turn" => 0,
-            "is_last_turn" => false,
-            "friend_hp" => 100,
-            "enemy_hp" => 100
-        );
-        #初期HP設定
-        foreach ($response["friend_position"] as $char_status){
-            $turndata["friend_hp"] += $char_status["endurance"];
+    public function __construct()
+    {
+        $this->battle = new BattleModel();
+        $this->userinfo = new UserModel();
+    }
+    /**
+    * [API] バトル経過生成APIのServiceクラス
+    *
+    * usersテーブルにあるbattle_idのバトルを進行し、バトルの初期状態を返す。
+    * 該当バトルのステータスを確認し、createdでなければ進行しない。
+    * @return $response : [ (array or string), STATUS_CODE ]
+    */
+    public function setBattle($battle_id = 0)
+    {
+        #ユーザー情報の取得
+        $user = $this->userinfo->getUser();
+        #紐付いたバトル情報の取得
+        $battle = $this->battle->getBattle($user);
+
+        $response = [];
+        # バトルの進行状態における分岐
+        if ($battle['progress'] == 'created'){
+            #created: バトルの進行データを作成し、初期状態を送信
+            $battle['progress'] = 'in_process';
+            $response = [$battle, 201];              #初期状態
+            #バトル進行データを作成
+            $battle = $this->battleMain($battle);
+            #バトル結果を書き込み
+            $this->battle->writeBattle($user, $battle);
+
+        } else if ( $battle['progress'] == 'in_process'){
+            #in process: 保存されていたデータを返す
+            $response = [$battle, 201];
+
+        } else if ( $battle['progress'] == 'closed'){
+            #closed: 終了した戦闘 のエラーを返す
+            $response = ['status: Already Closed Battle', 400];
+
+        };
+
+        return $response;
+    }
+    /**
+    * [API] ターン経過取得APIのServiceクラス
+    *
+    * userに紐付いているバトルについて、戦闘ログとして記録されているデータを返す。
+    * ステータスがin_processでなかった場合はエラーを返す。
+    */
+    public function turnoverBattle($battle_id)
+    {
+        $user = $this->userinfo->getUser();
+        $battle = $this->battle->getBattle($user);
+
+        if ($battle['progress'] == 'in_process'){
+            $response = [$battle['log'], 200];
+        } else {
+            $response = ['status: Battle is NOT in Process', 400];
         }
-        foreach ($response["enemy_position"] as $char_status){
-            $turndata["enemy_hp"] += $char_status["endurance"];
+    return $response;
+    }
+    /**
+    * バトルキャラ設定
+    * バトル参加キャラを一つの配列にまとめる
+    */
+    private function setBattleChar($battle)
+    {
+        $response = [];
+        $num = count($battle['friend_position']);
+        for ($i = 0; $i < $num; $i++){
+            $response[$i] = $battle['friend_position'][$i];
+            $response[$i]['position'] = 'friend'.($i+1);
+        }
+        $num = count($battle['enemy_position']);
+        for ($i = 0; $i < $num; $i++){
+            $response[$i+$this->CHARS_NUM] = $battle['enemy_position'][$i];
+            $response[$i+$this->CHARS_NUM]['position'] = 'enemy'.($i+1);
+        }
+        return $response;
+    }
+    /**
+    * バトルの進行データ作成処理
+    */
+    private function battleMain($battle)
+    {
+        #参加キャラデータを一つのリストに変形
+        $battle_chars = $this->setBattleChar($battle);
+        # 0ターン目のログ: 戦闘開始時のデータ
+        $battle_log[0] = $this->setupBattle($battle);
+
+        $turn = 0;
+        # 現在のターンが戦闘終了条件を満たしていない場合、次のターンに進む
+        while ( $battle_log[$turn]['is_last_turn'] == false ){
+            # ターンを進める
+            $turn++;
+            # 現在のターンのログを生成する
+            $battle_log[$turn] = $this->turnBattle($battle_chars, $battle_log[$turn - 1]);
+            # TURN_MAXに達していれば終了フラグを立てて抜ける
+            if ($turn == $this->TURN_MAX){
+                $battle_log[$turn]["is_last_turn"] = true;
+                break;
+            }
+        }
+        #バトルの進行データを初期データに追加
+        $battle['log'] = $battle_log;
+        #バトルの勝敗を取得
+        $battle['is_win'] = $this->getIsVictory($battle);
+        #バトル結果のステータス変化を追加
+        $battle['obtained'] = $this->setObtained($battle);
+
+        #受け取った引数と同じ形式で返す
+        return $battle;
+    }
+    /**
+    * 戦闘開始時のバトルログ生成
+    * @param $battle_log : battle_log(0ターン目)
+    */
+    private function setupBattle($battle_party)
+    {
+        # 初期HP設定
+        $battle_log = [
+            'is_last_turn' => false,
+            'friend_hp' => $this->INITIAL_HP,
+            'enemy_hp' => $this->INITIAL_HP
+        ];
+        foreach ($battle_party['friend_position'] as $friend){
+            $battle_log['friend_hp'] += $friend['status']['endurance'];
+        }
+        foreach ($battle_party['enemy_position'] as $enemy){
+            $battle_log['enemy_hp'] += $enemy['status']['endurance'];
+        }
+        return $battle_log;
+    }
+    /**
+    * ターンごとのバトルログ生成
+    */
+    private function turnBattle($chars, $log)
+    {
+        unset($log['action']);
+        $sequence = $this->putOrder($chars);
+        foreach ($sequence as $count => $position){
+            #行動するキャラのステータス
+            $active_char = $chars[$position['position']]['status'];
+            #行動するキャラのポジション
+            $active_char['position'] = $chars[$position['position']]['position'];
+            #キャラの行動ログ($action)をとる
+            $action = $this->actionChar($active_char, $log, $chars);
+            $log['action'][$count] = $action;
+            if ($log['is_last_turn'] == true){
+                break;
+            }
+        }
+        return $log;
+    }
+    /**
+    * キャラの行動順決定
+    * @return $sequence : 速度が高かった順に['position']要素として隊列番号が格納されている
+    */
+    private function putOrder($chars)
+    {
+        $count = 0;
+        $sequence = [];
+        foreach ($chars as $key => &$char){
+            $char['status']["agility"] = $this->setRandom($char['status']["agility"]);
+            $sequence[$count]["position"] = $key;
+            $sequence[$count]["speed"] = $char['status']["agility"];
+            $count++;
+        }
+        usort($sequence, function($a, $b){
+            return $a["speed"] < $b["speed"];
+        });
+        return $sequence;
+    }
+    /**
+    * キャラの行動ログ生成
+    * @param &$log   : ターンごとのログ $target['hp']要素にアクセスし、HPを更新する
+    * @param &$chars : キャラのステータス デバフとして攻撃力を下げる
+    */
+    private function actionChar($active_char, &$log ,&$chars)
+    {
+        $target = $this->decisionSide($active_char['position']);
+        $action = [];
+        $action['position'] = $active_char['position'];
+        $action["damage"] = $this->setRandom($active_char['attack']);
+        $log[$target['hp']] -= $action['damage'];
+        if ($log[$target['hp']]<=0) {
+            $log[$target['hp']] = 0;
+            $log['is_last_turn'] = true;
         }
 
-        $battle_log[0] = $turndata;
-        #戦闘処理
-        #ターンループ カウント:$turn
-        $turn = 1;
-        while($turndata["is_last_turn"] == false){
-            $turndata["turn"] = $turn;
-            if ($turn == 5){
-                $turndata["is_last_turn"] = true;              #5ターンで強制終了
+        #デバフ処理
+        for ($i=0 ; $i<3 ; $i++){
+            $debuf = $this->setRandom($active_char['debuf']/2);
+            $action['debuf'][$i] = $debuf;
+
+            $target_attack = &$chars[ $i+$target['position'] ]['status']['attack'];
+            $target_attack -= $debuf;
+            if ($target_attack < 0 ){
+                $target_attack = 0;
             }
-            #このターンのみの一時的なステータスを(再)定義する
-            $chars_turn = $battle_chars;
-     //   return array($chars_turn, 201);
-            #このターンにおける行動スピード、基礎ダメージ、デバフ能力を決定
-            $count = 0;
-            $sequence = array();                               #$sequenceは行動順管理用の配列
-            foreach ($chars_turn as &$char_status){
-                $char_status["attack"] = ($char_status["attack"]) + mt_rand(0 - $char_status["attack"]/8, $char_status["attack"]/8);
-                $char_status["agility"] = $char_status["agility"] + mt_rand(0, $char_status["agility"]/3);
-                $char_status["debuf"] = ($char_status["debuf"]) - mt_rand($char_status["debuf"]*3/8, $char_status["debuf"]*5/8);
-                $sequence[$count]["position"] = $count;
-                $sequence[$count]["speed"] = $char_status["agility"];
-                $count++;
+        }
+        return $action;
+    }
+
+    /**
+    * キャラが敵軍か友軍かの判定
+    */
+    private function decisionSide($position)
+    {
+        $target = [];
+        if (strstr($position, 'friend')){
+            $target['hp'] = 'enemy_hp';
+            $target['position'] = 3;                            #敵キャラが入っているのは味方の3つ分先
+        } else {
+            $target['hp'] = 'friend_hp';
+            $target['position'] = 0;
+        }
+        return $target;
+    }
+    /**
+    * 勝敗を取得する
+    * 味方が勝っていればtrue 敵が勝っていればfalse
+    */
+    private function getIsVictory($battle)
+    {
+        $turn_num = count($battle['log']);
+        $last_turn = $battle['log'][$turn_num - 1];
+        $result = $last_turn['friend_hp'] >= $last_turn['enemy_hp'];
+
+        return $result;
+    }
+    /**
+    *
+    */
+    private function setObtained($response)
+    {
+        $gainexp = $this->setGainExp($response['enemy_position'], $response['is_win']);
+        $chars = $this->setParamObtained($response['friend_position'], $obtained['gainexp']);
+        $obtained = [
+            'gainexp' => $gainexp,
+            'chars' => $chars,
+        ];
+        return $obtained;
+    }
+    /**
+    * 8分の7倍〜8分の9倍にする乱数を生成する
+    */
+    private function setRandom($number)
+    {
+        $result = mt_rand($number*7/8, $number*9/8);
+        return $result;
+    }
+    /**
+    * 経験値獲得関数
+    * $obtained : 成果物 経験値、レベルアップパラメータ、アイテム
+    * $gainexp : 獲得経験値 勝った場合は全額、 負けたら1/4
+    */
+    private function setGainExp($enemy_position, $is_win){
+        $gainexp = 0;
+        $exp_win = $is_win ? 1 : (1/4);
+        foreach ($enemy_position as $a_enemy){
+            $gainexp += $a_enemy['exp'] * $exp_win;
+        }
+        return $gainexp;
+    }
+    /**
+    * [関数] 参戦キャラに経験値を適用したものを返す
+    * @param $chars   : 各キャラの経験値追加後のパラメータ
+    */
+    private function setParamObtained($friend_position, $gainexp)
+    {
+        #キャラごとに処理する
+        $response = [];
+        $chars = $this->battle->getPartyChar($friend_position);
+        $chars_num = count($friend_position);
+        foreach ($friend_position as $count => $friend){
+            $a_char = $friend;
+            $a_char['exp'] += $gainexp;
+            while ($a_char['exp'] >= 100){
+                $a_char['exp'] -= 100;
+                $a_char['level']++;
+                $a_char['status'] = $this->setLevelUp($a_char['status'], $chars[$count]['status_growth_rate']);
             }
-            unset($char_status);
-            #$sequenceを要素"speed"が大きい順にソートする(行動する順にpositionが入った配列になる)
-            usort($sequence, function($a, $b){
-                return $a["speed"] < $b["speed"];
-            });
-
-            #各キャラ行動(ループで)
-            $action_count = 0;
-            $turndata["action"] = array();
-
-
-            foreach ($chars_turn as $char_status){
-                $position = $sequence[$action_count]["position"];      #現在行動しているポジション
-                echo $position." ";
-                $turndata["action"][$action_count]["position"] = $chars_turn[$position]["position"];
-                $turndata["action"][$action_count]["damage"] = $chars_turn[$position]["attack"];
-
-                #友軍の処理
-                if (strstr($chars_turn[$position]["position"], "friend")){
-                    #攻撃処理
-                    $turndata["enemy_hp"] -= $chars_turn[$position]["attack"];
-
-                    #デバフ処理
-                    $debuf = $chars_turn[$position]["debuf"];
-                    for ($i=0 ; $i<3 ; $i++){
-                        $chars_turn[$i+3]["attack"] -= $debuf;
-                        if ($chars_turn[$i+3]["attack"] < 0 ){ $chars_turn[$i+3]["attack"] = 0;}
-                        $turndata["action"][$action_count]["debuf"][$i] = $debuf;
-                    }
-
-                    #戦闘終了判定
-                    if ($turndata["enemy_hp"] <= 0){
-                        $turndata["enemy_hp"] = 0;
-                        $response["is_win"] = true;
-                        $turndata["is_last_turn"] = true;
-                        break;
-                    }
+            $response[] = $a_char;
+        }
+        return $response;
+    }
+    /**
+    * [関数] キャラのレベルが上がった時の処理
+    *
+    */
+    private function setLevelUp($status, $growth_rate){
+        $params = ['attack', 'endurance', 'agility', 'debuf'];
+        foreach ($params as $param){
+            $rand[$param] = mt_rand(1, 100);
+            while( $growth_rate[$param] > 0 ){
+                if ($rand[$param] <= $growth_rate[$param]){
+                    $status[$param] ++;
                 }
-                #敵軍の処理
-                if (strstr($chars_turn[$position]["position"], "enemy")){
-                    #攻撃処理
-                    $turndata["friend_hp"] -= $chars_turn[$position]["attack"];
-
-                    #デバフ処理
-                    $debuf = $chars_turn[$position]["debuf"];
-                    for ($i=0 ; $i<3 ; $i++){
-                        $chars_turn[$i]["attack"] -= $debuf;
-                        if ($chars_turn[$i]["attack"] < 0 ){ $chars_turn[$i]["attack"] = 0;}
-                        $turndata["action"][$action_count]["debuf"][$i] = $debuf;
-                    }
-
-                    #戦闘終了判定
-                    if ($turndata["friend_hp"] <= 0){
-                        $turndata["friend_hp"] = 0;
-                        $response["is_win"] = false;
-                        $turndata["is_last_turn"] = true;
-                        break;
-                    }
-                }
-                $action_count ++;
+                $growth_rate[$param] -= 100;
             }
-            unset($char_status);
-            echo "\n";
-            $battle_log[$turn] = $turndata;
-            $turn ++;
         }
-
-		return array($battle_log, 201);
-	}
-	public function turnoverBattle($battle_id)
-	{
-		//進行中のバトルについて、戦闘終了情報が入力されるか5ターン経過するまでのデータを取得し、送信する。
-		/*
-		$tableName = 'a_battles';
-		$eav = $this->marshaler->marshalJson('
-		    {
-		        ":yyyy": 1985
-		    }
-		');
-
-		$params = [
-		    'TableName' => $tableName,
-		    'KeyConditionExpression' => '#yr = :yyyy',
-		    'ExpressionAttributeNames'=> [ '#yr' => 'year' ],
-		    'ExpressionAttributeValues'=> $eav
-		];
-
-//		echo "Querying for movies from 1985.\n";
-
-		try {
-		    $result = $this->dynamodb->query($params);
-
-		 //   echo $result;
-
-		    foreach ($result['Items'] as $movie) {
-		        echo $this->marshaler->unmarshalValue($movie['year']) . ': ' .
-		            $this->marshaler->unmarshalValue($movie['title']) . "<br />";
-		    }
-
-		    $buf = array();
-		    $json = array();
-		     foreach ($result['Items'] as $key=>$movie) {
-		     //	dd ($movie);
-		        $buf['year'] = $this->marshaler->unmarshalValue($movie['year']);
-		        $buf['title'] = $this->marshaler->unmarshalValue($movie['title']);
-		        $buf['actors'] = $this->marshaler->unmarshalValue($movie['info']['M']['actors']);
-		        $json[] = $buf;
-		    }
-
-		    echo json_encode($json);
-		    return array($response, 200);
-		} catch (DynamoDbException $e) {
-		    echo "Unable to query:\n";
-		    echo $e->getMessage() . "\n";
-		}*/
-        $response = array(                     #連想配列の配列
-            array(
-                #毎ターン存在するもの
-                "turn" => 1,                   #DB上における turn == 0 は初期状態
-                "is_last_turn" => true,        #最終ターンか
-                "hp" => 190,
-                "enemy_hp" => 190,
-                #初期ターンは存在しないもの
-                "action" => array(
-                    array(
-                        "position" => "enemy2", // position? or enemy_position?
-                        "damage" => 24,                      // HP減少量
-                        "debuf" => array(
-                            10,
-                            8,
-                            11
-                        )
-                    ),
-                    array(
-                        "position" => "friend1", // position? or enemy_position?
-                        "damage" => 18,                      // HP減少量
-                        "debuf" => array(
-                            16,
-                            12,
-                            15
-                        )
-                    )
-                )
-            )
-        );
-    return array($response, 200);
+        return $status;
     }
 }

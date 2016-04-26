@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Auth;
 
 use App\User;
 use Validator;
-use App\Http\Controllers\Controller;
+use Socialite;
+//use App\Http\Controllers\Controller;
+use Illuminate\Routing\Controller;
 use Illuminate\Foundation\Auth\ThrottlesLogins;
 use Illuminate\Foundation\Auth\AuthenticatesAndRegistersUsers;
 
@@ -69,4 +71,18 @@ class AuthController extends Controller
             'password' => bcrypt($data['password']),
         ]);
     }
+    public function redirectToProvider()
+    {
+        return Socialite::driver('google')->redirect();
+    }
+    public function handleProviderCallback()
+    {
+        $user = Socialite::driver('google')->user();
+        echo json_encode($user);
+        //セッションをここで作成する
+        //セッション作成
+        // $user->token;
+
+    }
+
 }

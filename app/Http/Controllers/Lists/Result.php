@@ -13,6 +13,6 @@ class Result extends Controller
     {
     	$myModel = new Resultlogic();
     	$result = $myModel->getResult($battle_id);
-        return response(json_encode($result[0]),$result[1]);
+        return \Response::json($result[0],$result[1]);
     }
 }
