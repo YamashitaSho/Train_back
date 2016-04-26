@@ -1,15 +1,11 @@
 <?php
-namespace App\Services;
+namespace App\Services\Common;
 
 require '../vendor/autoload.php';
 use Illuminate\Database\Eloquent\Model;
 
 class Record extends Model
 {
-    public function __construct()
-    {
-        date_default_timezone_set('Asia/Tokyo');
-    }
     /**
     *トランザクションテーブルのレコード情報を作る関数
     *
@@ -17,7 +13,9 @@ class Record extends Model
     */
     public function makeRecordStatus()
     {
-        $date = date("YmdHis");
+        #タイムスタンプは日本時間で作る
+        date_default_timezone_set('Asia/Tokyo');
+        $date = date('YmdHis');     #YYYYMMDD24mmss
         $record = [
             'create_date' => $date,
             'update_date' => $date,
@@ -28,7 +26,9 @@ class Record extends Model
 
     public function updateRecordStatus($record)
     {
-        $date = date("YmdHis");
+        #タイムスタンプは日本時間で作る
+        date_default_timezone_set('Asia/Tokyo');
+        $date = date('YmdHis');
         $record['update_date'] = $date;
         return $record;
     }

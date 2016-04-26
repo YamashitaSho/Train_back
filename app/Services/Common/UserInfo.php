@@ -1,11 +1,8 @@
 <?php
-namespace App\Services;
+namespace App\Services\Common;
 
 require '../vendor/autoload.php';
 use Illuminate\Database\Eloquent\Model;
-
-use Aws\DynamoDb\Exception\DynamoDbException;
-use Aws\DynamoDb\Marshaler;
 
     /**
     * ユーザー情報に関わるクラス
@@ -14,19 +11,10 @@ use Aws\DynamoDb\Marshaler;
     */
 class UserInfo extends Model
 {
-    private $dynamodb;
-    private $marshaler;
     public function __construct()
     {
-        $sdk = new \Aws\Sdk([
-            'region'   => 'ap-northeast-1',
-            'version'  => 'latest'
-        ]);
-        date_default_timezone_set('UTC');
-        $this->dynamodb = $sdk->createDynamoDb();
-        $this->marshaler = new Marshaler();
+        $this->dynamodbhandler = new DynamoDBHandler();
     }
-
 
     /**
     * ユーザーID取得用の関数
@@ -52,6 +40,7 @@ class UserInfo extends Model
     public function getUserStatus($user_id)
     {
         #userIDに紐づけられた基本情報をDBから取得する
+
         $get = [
             'ConsistentRead' => true,
             'TableName' => 'a_users',
@@ -61,16 +50,7 @@ class UserInfo extends Model
                 ]
             ]
         ];
-
-        try {
-            $result = $this->dynamodb->getItem($get);
-        } catch (DynamoDbException $e) {
-            echo "ユーザー情報を取得することができませんでした。:\n";
-            echo $e->getMessage() . "\n";
-            $result = array("Unable to get UserStatus");
-        }
-
-        $response = $this->marshaler->unmarshalItem($result['Item']);
+        $response = $this->dynamodbhandler->getItem($get,'Failed to Get UserStatus');
         return $response;
     }
 }

@@ -5,24 +5,19 @@ require '../vendor/autoload.php';
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
-use Aws\DynamoDb\Exception\DynamoDbException;
+use App\Services\Common\UserInfo;
+use App\Services\Common\Record;
 use Aws\DynamoDb\Marshaler;
+use App\Services\Common\DynamoDBHandler;
 
 class OrderLogic extends Model
 {
-    private $dynamodb;
-    private $marshaler;
     public function __construct()
     {
-        $sdk = new \Aws\Sdk([
-            'region'   => 'ap-northeast-1',
-            'version'  => 'latest'
-        ]);
-        date_default_timezone_set('UTC');
-        $this->dynamodb = $sdk->createDynamoDb();
         $this->marshaler = new Marshaler();
         $this->userinfo = new UserInfo();
         $this->record = new Record();
+        $this->dynamo = new DynamoDBHandler();
     }
 
     /**
@@ -35,82 +30,131 @@ class OrderLogic extends Model
         $user_id = $this->userinfo->getUserID();
         $user = $this->userinfo->getUserStatus($user_id);
 
-        #パーティ情報の読み込み
-        $party = $user['party'];
+        $chars = $this->readChar($user_id);
+        $chars_master = $this->readCharMaster($chars);
+        $chars = $this->combineCharData($chars, $chars_master);        #キャラデータ
 
-        #手持ちのキャラ情報の読み込み(char_id, exp, level, attack, endurance, agility, debuf)
+        $items = $this->readItemMaster($user['items']);#アイテムデータ
+
+        $response = [
+            'party' => $user['party'],
+            'chars' => $chars,
+            'items' => $items,
+        ];
+        return [$response,200];
+    }
+
+    /**
+    * [関数] 所持しているキャラの読み込み
+    *
+    * 読み込むデータ: char_id, level, exp, status
+    * $idonly に trueが指定された場合、 読み込むデータは char_id のみ
+    */
+    private function readChar($user_id, $idonly = false)
+    {
         $eav = $this->marshaler->marshalJson('
             {
-                ":user_id":
-                '.$user_id.'
+                ":user_id": '.$user_id.'
             }
         ');
-        try {
-            $result = $this->dynamodb->query([
-                'TableName' => 'a_chars',
-                'KeyConditionExpression' => 'user_id = :user_id',
-                'ProjectionExpression' => 'char_id, exp, #lv, #st',
-                'ExpressionAttributeValues' => $eav,
-                'ExpressionAttributeNames' => [
-                    '#lv' => 'level',
-                    '#st' => 'status',
+        $query = [
+            'TableName' => 'a_chars',
+            'KeyConditionExpression' => 'user_id = :user_id',
+            'ExpressionAttributeValues' => $eav,
+        ];
+
+        if ($idonly) {
+            $query['ProjectionExpression'] = 'char_id';
+        } else {
+            $query['ProjectionExpression'] = 'char_id, exp, #lv, #st';
+            $query['ExpressionAttributeNames'] = [
+                '#lv' => 'level',
+                '#st' => 'status',
+            ];
+        }
+
+        $chars = $this->dynamo->queryItem($query, 'Failed to get CharData');
+        return $chars;
+    }
+
+    /**
+    * [関数] 所持しているキャラのマスターデータを読み込む。
+    *
+    * 読み込むデータ: char_id, name, status_max
+    */
+    private function readCharMaster($chars)
+    {
+        for ($i = 0; $i < count($chars); $i++){
+            $key[$i] = [
+                'char_id' => [
+                    'N' => (string)$chars[$i]['char_id']
                 ]
-            ]);
-        } catch (DynamoDbException $e) {
-            echo "ユーザーのキャラ情報を取得できませんでした。\n";
-            echo $e->getmessage() . "\n";
-            $result = ['Count' => 0];
+            ];
         }
-        for ($i = 0; $i < $result['Count']; $i++){
-            $char_id = $result['Items'][$i]['char_id']['N'];
-            $chars[$char_id] = $this->marshaler->unmarshalItem($result['Items'][$i]);
-        }
-        #キャラマスターデータ読み込み
-        try {
-            $result = $this->dynamodb->scan([
-                'TableName' => 'chars',
-                'ProjectionExpression' => 'char_id, #nm, status_max',
-                'ExpressionAttributeNames' => [
-                    '#nm' => 'name',
-                ],
-            ]);
-        } catch (DynamoDbException $e) {
-            echo "キャラのマスターデータの読み込みに失敗しました\n";
-            echo $e->getMessage() . "\n";
-        }
-        for ($i = 0; $i < $result['Count']; $i++){
-            $char_id = $result['Items'][$i]['char_id']['N'];
-            if (array_key_exists($char_id, $chars)){
-                $chars[$char_id] += $this->marshaler->unmarshalItem($result['Items'][$i]);
+        $get = [
+            'RequestItems' => [
+                'chars' => [
+                    'Keys' => $key,
+                    'ProjectionExpression' => 'char_id, #nm, status_max',
+                    'ExpressionAttributeNames' => [
+                        '#nm' => 'name'
+                    ]
+                ]
+            ]
+        ];
+        $chars_master = $this->dynamo->batchGetItem($get, 'Failed to read CharData(Master)');
+        return $chars_master['chars'];
+    }
+    /**
+    * [関数] トランとマスタのキャラデータを統合する
+    *
+    * $chars と $chars_masterの要素数は同じであること
+    */
+    private function combineCharData($chars, $chars_master)
+    {
+        $chars_combine = [];
+        $key = 0;
+        for ($i = 0; $i < count($chars); $i++){
+            $chars_combine[$i] = $chars[$i];
+            for ($j = 0; $j < count($chars_master); $j++){
+                if ($chars_master[$j]['char_id'] == $chars_combine[$i]['char_id']){
+                    $key = $j;
+                    break;
+                }
             }
+            $chars_combine[$i] += $chars_master[$key];
         }
-
-        #アイテムマスターデータ読み込み
-        try {
-            $result = $this->dynamodb->scan([
-                'TableName' => 'items',
-                'ProjectionExpression' => 'item_id, #nm, #txt, #st',
-                'ExpressionAttributeNames' => [
-                    '#nm' => 'name',
-                    '#txt' => 'text',
-                    '#st' => 'status',
-                ],
-            ]);
-        } catch (DynamoDbException $e) {
-            echo "アイテムのマスターデータの読み込みに失敗しました\n";
-            echo $e->getMessage() . "\n";
+        return $chars_combine;
+    }
+    /**
+    * [関数] アイテムのマスターデータを読み込む
+    *
+    * 読み込むデータ : item_id, name, text, status
+    */
+    private function readItemMaster($items)
+    {
+        for ($i = 0; $i < count($items); $i++){
+            $key[$i] = [
+                'item_id' => [
+                    'N' => (string)$items[$i]['item_id']
+                ]
+            ];
         }
-        for ($i = 0; $i < $result['Count']; $i++){
-            $item_id = $result['Items'][$i]['item_id']['N'];
-            $items[$item_id] = $this->marshaler->unmarshalItem($result['Items'][$i]);
-        }
-
-        $response = array(
-            "party" => $party,
-            "chars" => $chars,
-            "items" => $items,
-        );
-        return array($response,200);
+        $get = [
+            'RequestItems' => [
+                'items' => [
+                    'Keys' => $key,
+                    'ProjectionExpression' => 'item_id, #nm, #txt, #st',
+                    'ExpressionAttributeNames' => [
+                        '#nm' => 'name',
+                        '#txt' => 'text',
+                        '#st' => 'status'
+                    ]
+                ]
+            ]
+        ];
+        $items_master = $this->dynamo->batchGetItem($get, 'Failed to read ItemData');
+        return $items_master['items'];
     }
 
     /**
@@ -124,22 +168,22 @@ class OrderLogic extends Model
         $user_id = $this->userinfo->getUserID();
         $user = $this->userinfo->getUserStatus($user_id);
 
-        #リクエストJSONが入っているかチェック
+        #リクエストJSONに slot と new_id が入っているかチェック
         if ( !isset($request['slot'], $request['new_id']) ){
-            return array("status: body undefined", 400);
+            return ['status: body undefined', 400];
         }
-        #パーティ情報の読み込み
-        $party = $user['party'];
-        $in_use = true;          //使用可能フラグ 使用可:true
+        #編成スロットが正しいかのチェック
+        if ($request['slot'] < 0 | $request['slot'] > 2) {
+            return ['status: Unavailable Slot', 400];
+        }
 
-        if ($type == "item"){
+        if ($type == 'item'){
             return $this->changeItem($request, $user);  #アイテムの交換
-        } elseif ($type == "char"){
+        } elseif ($type == 'char'){
             return $this->changeChar($request, $user);  #キャラの交換
         }
-
-        #URIに正しいタイプ宣言が入っていない
-        return array("status: type undefined", 400);
+        #else URIに正しいタイプ宣言が入っていない
+        return ['status: type undefined', 400];
     }
 
     /**
@@ -151,45 +195,23 @@ class OrderLogic extends Model
     {
         #アイテムの所持チェック
         $exist = false;
-        foreach($user['items'] as $user_item) {
+        foreach ($user['items'] as $user_item) {
             if ($user_item['item_id'] == $request['new_id']){
                 $exist = true;
             }
         }
         if ($exist == false){
-            return array("status: item is not possessed", 400);
+            return ["status: item is not possessed", 400];
         }
-
         #編成の重複チェック
         for ($i = 0; $i < 3; $i++) {
             if ($user['party'][$i]['item_id'] == $request['new_id']) {
-                return array("status: item is already ordered", 400);
+                return ["status: item is already ordered", 400];
             }
         }
-
-        #チェックが完了したのでアイテムを入れ替える
-        #書き込み先はユーザー情報のみ
+        #チェックが完了したのでアイテムを入れ替え、書き込む
         $user['party'][$request['slot']]['item_id'] = $request['new_id'];
-
-        # ユーザー情報書き込み
-        $user['record'] = $this->record->updateRecordStatus($user['record']);
-        $put_item = $user;
-        $put_key = [
-            'user_id' => $user['user_id']
-        ];
-        $put_user = [
-            'TableName' => 'a_users',
-            'Key' => $this->marshaler->marshalItem($put_key),
-            'Item' => $this->marshaler->marshalItem($put_item),
-        ];
-
-        try {
-            $result = $this->dynamodb->putItem($put_user);
-        } catch (DynamoDbException $e) {
-        #    echo "ユーザーデータの書き込みに失敗:\n";
-        #    echo $e->getMessage() . '\n';
-            return ["status: Failed to write UserData", 500];
-        }
+        $this->updateUser($user);
 
         return [$request, 201];
     }
@@ -203,63 +225,46 @@ class OrderLogic extends Model
     {
         #キャラの所持チェック
         #ユーザーが保持しているキャラ情報を読み込む(char_idのみ)
-        $eav = $this->marshaler->marshalJson('
-            {
-                ":user_id": '.$user['user_id'].'
-            }
-        ');
-        try {
-            $result = $this->dynamodb->query([
-                'TableName' => 'a_chars',
-                'KeyConditionExpression' => 'user_id = :user_id',
-                'ProjectionExpression' => 'char_id',
-                'ExpressionAttributeValues' => $eav
-                ]);
-        } catch (DynamoDbException $e) {
-            echo "ユーザーのキャラ情報を取得できませんでした。\n";
-            echo $e->getmessage() . "\n";
-        }
-
+        $chars = $this->readChar($user['user_id'], true);      # 第2引数で読み込む項目をIDに限定
         $exist = false;
-        for ($i = 0; $i < $result["Count"]; $i++){
-            if ( $result['Items'][$i]['char_id']['N'] == $request['new_id']){
+        foreach ($chars as $char) {
+            if ( $char['char_id'] == $request['new_id']){
                 $exist = true;
             }
         }
         if ($exist == false){
-            return array("status: character is not possessed", 400);
+            return ["status: Character is not Possessed", 400];
         }
-
         #編成の重複チェック
         for ($i = 0; $i < 3; $i++) {
             if ($user['party'][$i]['char_id'] == $request['new_id']) {
-                return array("status: character is already ordered", 400);
+                return ["status: character is already ordered", 400];
             }
         }
-
-        #チェックが完了したのでキャラクタを入れ替える
-        #書き込み先はユーザー情報のみ
+        #チェックが完了したのでキャラクタを入れ替え、書き込む
         $user['party'][$request['slot']]['char_id'] = $request['new_id'];
+        $this->updateUser($user);
 
-        # ユーザー情報書き込み
+        return [$request, 201];
+    }
+
+    /**
+    * ユーザー情報の更新
+    *
+    * RecordStatus を更新し、 usersテーブルに書き込む
+    */
+    private function updateUser($user)
+    {
         $user['record'] = $this->record->updateRecordStatus($user['record']);
-        $put_item = $user;
-        $put_key = [
+        $key = [
             'user_id' => $user['user_id']
         ];
-        $put_user = [
+        $put = [
             'TableName' => 'a_users',
-            'Key' => $this->marshaler->marshalItem($put_key),
-            'Item' => $this->marshaler->marshalItem($put_item),
+            'Key' => $this->marshaler->marshalItem($key),
+            'Item' => $this->marshaler->marshalItem($user),
         ];
-
-        try {
-            $result = $this->dynamodb->putItem($put_user);
-        } catch (DynamoDbException $e) {
-        #    echo "ユーザーデータの書き込みに失敗:\n";
-        #    echo $e->getMessage() . '\n';
-            return array("status: Failed to write UserData", 500);
-        }
-        return array($request, 201);
+        $result = $this->dynamo->putItem($put, 'Failed to Write UserData');
+        return;
     }
 }
