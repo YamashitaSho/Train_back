@@ -133,4 +133,14 @@ class DynamoDBHandler extends Model
         $result = $this->dynamodb->updateItem($update);
         return $result;
     }
+
+
+    /**
+     * [Method] DynamoDBにdeleteItemを投げる関数
+     */
+    public function deleteItem($delete)
+    {
+        $result = $this->dynamodb->deleteItem($delete);
+        return $result;
+    }
 }

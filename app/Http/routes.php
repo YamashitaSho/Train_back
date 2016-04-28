@@ -11,11 +11,6 @@
 |
 
 
-Route::get('/', function () {
-    return view('test');
-});
-
-
 |--------------------------------------------------------------------------
 | Application Routes
 |--------------------------------------------------------------------------
@@ -28,15 +23,17 @@ Route::get('/', function () {
 
 
 Route::group(['middleware' => ['web']], function () {
-	Route::get('v1/', function(){
-	    if (! \Auth::check()) {
-	        return Redirect::to('v1/auth/google');
-        }
-    });
-Route::get('v1/auth/google', 'Auth\AuthController@redirectToProvider');
-Route::get('v1/auth/google/callback', 'Auth\AuthController@handleProviderCallback');
 
+    Route::resource('v1/quest', 'Lists\Quest', ['only' => ['store']]);
+    Route::resource('v1/stage', 'Lists\Stage', ['only' => ['index', 'store']]);
+    Route::resource('v1/battle', 'Lists\Battle', ['only' => ['show', 'update']]);
+    Route::resource('v1/battle/result', 'Lists\Result', ['only' => ['update']]);
 
+    Route::resource('v1/gacha', 'Lists\Gacha', ['only' => ['index', 'store']]);
+
+    Route::resource('v1/menu', 'Lists\Menu', ['only' => ['index']]);
+
+    Route::resource('v1/order', 'Lists\Order', ['only' => ['index', 'update']]);
 });
 
 /*//認証のルート定義
@@ -49,14 +46,5 @@ Route::get('auth/legister', 'Auth\AuthController@getRegister');
 Route::post('auth/register', 'Auth\AuthController@postRegister');*/
 #Route::group(['middleware' => 'auth'], function (){
 
-	Route::resource('v1/quest', 'Lists\Quest', ['only' => ['store']]);
-	Route::resource('v1/stage', 'Lists\Stage', ['only' => ['index', 'store']]);
-	Route::resource('v1/battle', 'Lists\Battle', ['only' => ['show', 'update']]);
-	Route::resource('v1/battle/result', 'Lists\Result', ['only' => ['update']]);
 
-	Route::resource('v1/gacha', 'Lists\Gacha', ['only' => ['index', 'store']]);
-
-	Route::resource('v1/menu', 'Lists\Menu', ['only' => ['index']]);
-
-	Route::resource('v1/order', 'Lists\Order', ['only' => ['index', 'update']]);
 #});

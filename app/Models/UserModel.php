@@ -1,8 +1,7 @@
 <?php
 namespace App\Models;
 
-require '../vendor/autoload.php';
-use Illuminate\Database\Eloquent\Model;
+use App\Models\DynamoDBHandler;
 
     /**
     * ユーザー情報に関わるクラス
@@ -13,12 +12,14 @@ class UserModel extends DynamoDBHandler
 {
     private $user;
     private $user_id;
+    private $is_read;
     public function __construct()
     {
         parent::__construct();
 
         $this->user_id = 1;               #セッションから取得する
         $this->user = [];
+        $this->is_read = 0;
 
     }
 
@@ -33,7 +34,7 @@ class UserModel extends DynamoDBHandler
     {
         #userIDに紐づけられた基本情報をDBから取得する
         #$user_id = $this->user_id;
-        if (empty($this->user)){
+        if ($this->is_read == 0){
             $get = [
                 'TableName' => 'a_users',
                 'Key' => [
@@ -42,7 +43,8 @@ class UserModel extends DynamoDBHandler
                     ]
                 ]
             ];
-            $this->user = $this->getItem($get,'Failed to Get UserStatus');
+            $this->user = $this->getItem($get);
+            $this->is_read = 1;
         }
 
         return $this->user;

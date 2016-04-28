@@ -1,9 +1,6 @@
 <?php
 namespace App\Models;
 
-require '../vendor/autoload.php';
-use Illuminate\Database\Eloquent\Model;
-
 use Aws\DynamoDb\Marshaler;
 use App\Models\DynamoDBHandler;
 use App\Services\Common\Record;
@@ -61,10 +58,7 @@ class BattleModel extends DynamoDBHandler
     }
     public function writeBattle($user, $battle)
     {
-        $battle['user_id'] = (int)$user['user_id'];
-        $battle['battle_id'] = (int)$user['battle_id'];
         $battle['record'] = $this->record->updateRecordStatus($battle['record']);
-        $item = $battle;
         $key = [
             'user_id' => [
                 'N' => (string)$user['user_id']
@@ -76,7 +70,7 @@ class BattleModel extends DynamoDBHandler
         $put = [
             'TableName' => 'a_battles',
             'Key' => $key,
-            'Item' => $this->marshaler->marshalItem($item),
+            'Item' => $this->marshaler->marshalItem($battle),
         ];
         $result = $this->putItem($put, ['Failed to write BattleData']);
         return ;

@@ -1,18 +1,23 @@
 <?php
 namespace App\Services;
 
-require '../vendor/autoload.php';
 use Illuminate\Database\Eloquent\Model;
-
 use App\Models\QuestModel;
 use App\Models\UserModel;
 
+
+/**
+ * [Class] クエスト実行クラス
+ * バトルを発行し、バトルの実処理はBattleクラスに移譲する
+ */
 class QuestLogic extends Model
 {
     public function __construct(){
         $this->quest = new QuestModel();
         $this->userinfo = new UserModel();
     }
+
+
     /**
     * [API] クエストコマンドからのバトルを作成する関数
     *
@@ -26,7 +31,7 @@ class QuestLogic extends Model
             return true;                           #バトルIDが0の場合は再利用しない
         }
 
-        if (!$this->checkBattleMake($user)){       #バトル作成可能条件の確認
+        if (!$this->canMakeBattle($user)){       #バトル作成可能条件の確認
             $response = [
                 'battle_id' => $user['battle_id']
             ];
@@ -34,12 +39,12 @@ class QuestLogic extends Model
         }
         #バトルIDを一つ進める
         $user['battle_id'] ++;
-        #仮enemyparty_id
+        #仮enemyparty_id()
         $enemyparty_id = 0;
         $enemyparty = $this->quest->readEnemyParty($enemyparty_id);
         $enemy_position = $this->quest->readEnemy($enemyparty['party']);
         $friend_position = $this->quest->readCharInParty($user);
-        #ユーザーデータの書き込み
+        #ユーザーデータの書き込み(トランザクションに要変更)
         $this->quest->writeBattle($user, $friend_position, $enemy_position);
         $this->quest->writeUser($user);
 
@@ -47,7 +52,12 @@ class QuestLogic extends Model
         return [$response, 201];
     }
 
-    public function checkBattleMake($user)
+
+    /**
+     * [Method] クエストが実行できる状態かを返す
+     * @return boolean 実行できる : true
+     */
+    private function canMakeBattle($user)
     {
         if ($user['battle_id'] == 0){
             return true;                           #バトルIDが0の場合は再利用しない

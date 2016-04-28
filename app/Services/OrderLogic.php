@@ -1,23 +1,27 @@
 <?php
 namespace App\Services;
 
-require '../vendor/autoload.php';
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
-
-use App\Services\Common\UserInfo;
-use App\Services\Common\Record;
-use Aws\DynamoDb\Marshaler;
-use App\Services\Common\DynamoDBHandler;
+use App\Models\OrderModel;
+use App\Models\UserModel;
 
 class OrderLogic extends Model
 {
+    private $REQUEST_TYPE_UNDEFINED = 0;
+    private $REQUEST_TYPE_CHAR = 1;
+    private $REQUEST_TYPE_ITEM = 2;
+
+    private $UNSET_ID = 0;
+
+    private $ERROR_TYPE_UNDEFINED = ['Request Type Error', 400];
+    private $ERROR_JSON_UNAVAILABLE = ['JSON Error', 400];
+    private $ERROR_SLOT_UNAVAILABLE = ['Slot Unavailable', 400];
+
     public function __construct()
     {
-        $this->marshaler = new Marshaler();
-        $this->userinfo = new UserInfo();
-        $this->record = new Record();
-        $this->dynamo = new DynamoDBHandler();
+        $this->order = new OrderModel();
+        $this->userinfo = new UserModel();
     }
 
     /**
@@ -27,14 +31,15 @@ class OrderLogic extends Model
     public function getOrder()
     {
         #ユーザー情報を読み込む
-        $user_id = $this->userinfo->getUserID();
-        $user = $this->userinfo->getUserStatus($user_id);
-
-        $chars = $this->readChar($user_id);
-        $chars_master = $this->readCharMaster($chars);
-        $chars = $this->combineCharData($chars, $chars_master);        #キャラデータ
-
-        $items = $this->readItemMaster($user['items']);#アイテムデータ
+        $user = $this->userinfo->getUser();
+        #所持キャラ
+        $chars = $this->order->readChar($user['user_id']);
+        #所持キャラのマスタ
+        $chars_master = $this->order->readCharMaster($chars);
+        #キャラデータをマスタと統合
+        $chars = $this->combineCharData($chars, $chars_master);
+        #アイテムデータ
+        $items = $this->order->readItem($user['items']);
 
         $response = [
             'party' => $user['party'],
@@ -45,146 +50,89 @@ class OrderLogic extends Model
     }
 
     /**
-    * [関数] 所持しているキャラの読み込み
-    *
-    * 読み込むデータ: char_id, level, exp, status
-    * $idonly に trueが指定された場合、 読み込むデータは char_id のみ
-    */
-    private function readChar($user_id, $idonly = false)
-    {
-        $eav = $this->marshaler->marshalJson('
-            {
-                ":user_id": '.$user_id.'
-            }
-        ');
-        $query = [
-            'TableName' => 'a_chars',
-            'KeyConditionExpression' => 'user_id = :user_id',
-            'ExpressionAttributeValues' => $eav,
-        ];
-
-        if ($idonly) {
-            $query['ProjectionExpression'] = 'char_id';
-        } else {
-            $query['ProjectionExpression'] = 'char_id, exp, #lv, #st';
-            $query['ExpressionAttributeNames'] = [
-                '#lv' => 'level',
-                '#st' => 'status',
-            ];
-        }
-
-        $chars = $this->dynamo->queryItem($query, 'Failed to get CharData');
-        return $chars;
-    }
-
-    /**
-    * [関数] 所持しているキャラのマスターデータを読み込む。
-    *
-    * 読み込むデータ: char_id, name, status_max
-    */
-    private function readCharMaster($chars)
-    {
-        for ($i = 0; $i < count($chars); $i++){
-            $key[$i] = [
-                'char_id' => [
-                    'N' => (string)$chars[$i]['char_id']
-                ]
-            ];
-        }
-        $get = [
-            'RequestItems' => [
-                'chars' => [
-                    'Keys' => $key,
-                    'ProjectionExpression' => 'char_id, #nm, status_max',
-                    'ExpressionAttributeNames' => [
-                        '#nm' => 'name'
-                    ]
-                ]
-            ]
-        ];
-        $chars_master = $this->dynamo->batchGetItem($get, 'Failed to read CharData(Master)');
-        return $chars_master['chars'];
-    }
-    /**
-    * [関数] トランとマスタのキャラデータを統合する
-    *
-    * $chars と $chars_masterの要素数は同じであること
-    */
-    private function combineCharData($chars, $chars_master)
-    {
-        $chars_combine = [];
-        $key = 0;
-        for ($i = 0; $i < count($chars); $i++){
-            $chars_combine[$i] = $chars[$i];
-            for ($j = 0; $j < count($chars_master); $j++){
-                if ($chars_master[$j]['char_id'] == $chars_combine[$i]['char_id']){
-                    $key = $j;
-                    break;
-                }
-            }
-            $chars_combine[$i] += $chars_master[$key];
-        }
-        return $chars_combine;
-    }
-    /**
-    * [関数] アイテムのマスターデータを読み込む
-    *
-    * 読み込むデータ : item_id, name, text, status
-    */
-    private function readItemMaster($items)
-    {
-        for ($i = 0; $i < count($items); $i++){
-            $key[$i] = [
-                'item_id' => [
-                    'N' => (string)$items[$i]['item_id']
-                ]
-            ];
-        }
-        $get = [
-            'RequestItems' => [
-                'items' => [
-                    'Keys' => $key,
-                    'ProjectionExpression' => 'item_id, #nm, #txt, #st',
-                    'ExpressionAttributeNames' => [
-                        '#nm' => 'name',
-                        '#txt' => 'text',
-                        '#st' => 'status'
-                    ]
-                ]
-            ]
-        ];
-        $items_master = $this->dynamo->batchGetItem($get, 'Failed to read ItemData');
-        return $items_master['items'];
-    }
-
-    /**
     * [API] 編成の入れ替えを実行する関数
     *
     */
     public function changeOrder($type)
     {
+        #JSONリクエスト
         $request = \Request::all();
+        $response = [];
         #ユーザー情報を読み込む
-        $user_id = $this->userinfo->getUserID();
-        $user = $this->userinfo->getUserStatus($user_id);
+        $user = $this->userinfo->getUser();
+        #URIのリクエストタイプを判別
 
-        #リクエストJSONに slot と new_id が入っているかチェック
-        if ( !isset($request['slot'], $request['new_id']) ){
-            return ['status: body undefined', 400];
-        }
-        #編成スロットが正しいかのチェック
-        if ($request['slot'] < 0 | $request['slot'] > 2) {
-            return ['status: Unavailable Slot', 400];
-        }
+        $request_type = $this->checkType($type);
+        #リクエストJSONの正当性を判断
 
-        if ($type == 'item'){
-            return $this->changeItem($request, $user);  #アイテムの交換
-        } elseif ($type == 'char'){
-            return $this->changeChar($request, $user);  #キャラの交換
+        $response = $this->validateRequest($request);
+        #正当な場合は$responseが空配列
+        if (empty($response)){
+            switch ($request_type) {
+                case $this->REQUEST_TYPE_ITEM:
+                    $response = $this->changeItem($request, $user);
+                    break;
+                case $this->REQUEST_TYPE_CHAR:
+                    $response = $this->changeChar($request, $user);
+                    break;
+                case $this->REQUEST_TYPE_UNDEFINED:
+                    $response = $this->ERROR_TYPE_UNDEFINED;
+                    break;
+            }
         }
-        #else URIに正しいタイプ宣言が入っていない
-        return ['status: type undefined', 400];
+        return $response;
     }
+    /**
+    * [関数] リクエストのタイプを判別する
+    *
+    * @return $request_type : $REQUEST_TYPE_HOGEのいずれか
+    * $REQUEST_TYPE_HOGE : 0 or 1 or 2
+    */
+    private function checkType($type)
+    {
+        $request_type = $this->REQUEST_TYPE_UNDEFINED;
+        if ($type == 'item'){
+            $request_type = $this->REQUEST_TYPE_ITEM;
+        } else if ($type == 'char'){
+            $request_type = $this->REQUEST_TYPE_CHAR;
+        }
+        return $request_type;
+    }
+    private function validateRequest($request)
+    {
+        $response = [];
+        do {
+            if ( !isset($request['slot'], $request['new_id']) ){
+                $response = $this->ERROR_JSON_UNAVAILABLE;
+                break;
+            }
+            if ($request['slot'] < 0 | $request['slot'] > 2) {
+                $response = $this->ERROR_SLOT_UNAVAILABLE;
+                break;
+            }
+        } while (false);
+        return $response;
+    }
+    /**
+    * [関数] トランとマスタのキャラデータを統合する
+    */
+    private function combineCharData($chars, $chars_master)
+    {
+        $chars_combine = [];
+        $key = 0;
+        foreach ($chars as $char){
+            $char_combine = $char;
+            foreach ($chars_master as $char_master){
+                if ($char_master['char_id'] == $char['char_id']){
+                    $char_combine += $char_master;
+                    break;
+                }
+            }
+            $chars_combine[] = $char_combine;
+        }
+        return $chars_combine;
+    }
+
 
     /**
     * [関数] アイテム交換を実行できるかどうかを判定し、実行する 。
@@ -193,25 +141,18 @@ class OrderLogic extends Model
     */
     private function changeItem($request, $user)
     {
-        #アイテムの所持チェック
-        $exist = false;
-        foreach ($user['items'] as $user_item) {
-            if ($user_item['item_id'] == $request['new_id']){
-                $exist = true;
-            }
+        $type = 'item_id';
+        #所持チェック
+        if ( !$this->isPossess($user['items'], $request['new_id'], $type) ){
+            return ['Item is not Possessed', 400];
         }
-        if ($exist == false){
-            return ["status: item is not possessed", 400];
+        #重複チェック
+        if ( !$this->isDuplicate($user['party'], $request['new_id'], $type) ){
+            return ['Item is already Ordered', 400];
         }
-        #編成の重複チェック
-        for ($i = 0; $i < 3; $i++) {
-            if ($user['party'][$i]['item_id'] == $request['new_id']) {
-                return ["status: item is already ordered", 400];
-            }
-        }
-        #チェックが完了したのでアイテムを入れ替え、書き込む
-        $user['party'][$request['slot']]['item_id'] = $request['new_id'];
-        $this->updateUser($user);
+        #隊列入れ替え、書き込み
+        $user['party'][$request['slot']][$type] = $request['new_id'];
+        $this->order->updateUser($user);
 
         return [$request, 201];
     }
@@ -219,52 +160,64 @@ class OrderLogic extends Model
     /**
     * [関数] キャラ交換を実行できるかどうかを判定し、実行する 。
     *
-    * @return 成功 or 失敗
+    * @return $request, HTTP_STATUS_CODE
     */
     private function changeChar($request, $user)
     {
+        $type = 'char_id';
+        $response = [$request, 201];
         #キャラの所持チェック
-        #ユーザーが保持しているキャラ情報を読み込む(char_idのみ)
-        $chars = $this->readChar($user['user_id'], true);      # 第2引数で読み込む項目をIDに限定
-        $exist = false;
-        foreach ($chars as $char) {
-            if ( $char['char_id'] == $request['new_id']){
-                $exist = true;
+        #ユーザーが保持しているキャラ情報を読み込む(char_idのみ[第2引数で指定]
+        $chars = $this->order->readChar($user['user_id'], true);
+        do {
+            #所持チェック
+            if ( !$this->isPossess($chars, $request['new_id'], $type) ){
+                $response = ['Character is not Possessed', 400];
+                break;
             }
-        }
-        if ($exist == false){
-            return ["status: Character is not Possessed", 400];
-        }
-        #編成の重複チェック
-        for ($i = 0; $i < 3; $i++) {
-            if ($user['party'][$i]['char_id'] == $request['new_id']) {
-                return ["status: character is already ordered", 400];
+            #重複チェック
+            if ( !$this->isDuplicate($user['party'], $request['new_id'], $type) ){
+                $response = ['Character is already Ordered', 400];
+                break;
             }
-        }
-        #チェックが完了したのでキャラクタを入れ替え、書き込む
-        $user['party'][$request['slot']]['char_id'] = $request['new_id'];
-        $this->updateUser($user);
+            #隊列入れ替え、書き込み
+            $user['party'][$request['slot']][$type] = $request['new_id'];
+            $this->order->updateUser($user);
+        } while (false);
 
-        return [$request, 201];
+        return $response;
     }
-
     /**
-    * ユーザー情報の更新
-    *
-    * RecordStatus を更新し、 usersテーブルに書き込む
-    */
-    private function updateUser($user)
+     * [Method] item(キャラ、アイテム)の所持を返す
+     *
+     * @return boolean 持っている:true
+     */
+    private function isPossess($order, $new_id, $type)
     {
-        $user['record'] = $this->record->updateRecordStatus($user['record']);
-        $key = [
-            'user_id' => $user['user_id']
-        ];
-        $put = [
-            'TableName' => 'a_users',
-            'Key' => $this->marshaler->marshalItem($key),
-            'Item' => $this->marshaler->marshalItem($user),
-        ];
-        $result = $this->dynamo->putItem($put, 'Failed to Write UserData');
-        return;
+        $response = false;
+        foreach ($order as $item){
+            if ( ($item[$type] == $new_id) || ($new_id == $this->UNSET_ID) ){
+                $response = true;
+                break;
+            }
+        }
+        return $response;
+    }
+    /**
+     * [Method] item(キャラ、アイテム)がすでに登録されていないかを返す
+     *
+     * UNSET_ID については重複していても登録できる。(未設定のID)
+     * @return boolean 登録されていない: true
+     */
+    private function isDuplicate($party, $new_id, $type)
+    {
+        $response = true;
+        foreach ($party as $item){
+            if ( ($item[$type] == $new_id) && ($new_id != $this->UNSET_ID)) {
+                $response = false;
+                break;
+            }
+        }
+        return $response;
     }
 }

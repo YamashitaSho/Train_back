@@ -7,11 +7,11 @@ use App\Models\TransactionModel;
 use App\Services\Common\Record;
 
 /**
- * [Class] クエストに関わるModelクラス
+ * [Class] アリーナに関わるModelクラス
  *
  * 未実装項目 バトル発行はトランザクション処理として行う
  */
-class QuestModel extends DynamoDBHandler
+class StageModel extends DynamoDBHandler
 {
     public function __construct()
     {
@@ -21,6 +21,40 @@ class QuestModel extends DynamoDBHandler
         $this->trans = new TransactionModel();
     }
 
+
+    /**
+    * [Method] パーティに組み込まれている味方キャラデータを読み込む
+    */
+    public function readCharInParty($user)
+    {
+        #読み込むキーを設定 : $key
+        $key = [];
+        foreach ($user['party'] as $char){
+            $key[] = [
+                'user_id' => [
+                    'N' => (string)$user['user_id']
+                ],
+                'char_id' => [
+                    'N' => (string)$char['char_id']
+                ]
+            ];
+        }
+        $get = [
+            'RequestItems' => [
+                'a_chars' => [
+                    'Keys' => $key,
+                    'ProjectionExpression' => 'char_id, exp, #lv, #st, #nm',
+                    'ExpressionAttributeNames' => [
+                        '#nm' => 'name',
+                        '#lv' => 'level',
+                        '#st' => 'status',
+                    ]
+                ]
+            ]
+        ];
+        $result = $this->batchGetItem($get, 'Failed to Read Chardata');
+        return $result['a_chars'];
+    }
 
     /**
      * [Method] バトル情報を読み込む
@@ -127,8 +161,8 @@ class QuestModel extends DynamoDBHandler
                 ]
             ]
         ];
-        $result = $this->batchGetItem($get, 'Failed to Read Chardata');
-        return $result['a_chars'];
+        $enemies = $this->batchGetItem($get, 'Failed to Read Chardata');
+        return $enemies['a_chars'];
     }
 
 

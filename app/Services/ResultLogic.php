@@ -1,64 +1,48 @@
 <?php
 namespace App\Services;
 
-require '../vendor/autoload.php';
 use Illuminate\Database\Eloquent\Model;
-
-use Aws\DynamoDb\Exception\DynamoDbException;
-use Aws\DynamoDb\Marshaler;
+use App\Models\UserModel;
+use App\Models\ResultModel;
 
 class Resultlogic extends Model
 {
-    private $dynamodb;
-    private $marshaler;
     public function __construct()
     {
-        $sdk = new \Aws\Sdk([
-            'region'   => 'ap-northeast-1',
-            'version'  => 'latest'
-        ]);
-        date_default_timezone_set('UTC');
-        $this->dynamodb = $sdk->createDynamoDb();
-        $this->marshaler = new Marshaler();
-        $this->userinfo = new UserInfo();
-        $this->record = new Record();
+        $this->userinfo = new UserModel();
+        $this->result = new ResultModel();
     }
     /**
-    * [API] バトル結果表示、反映のAPI
+    * [API] バトル結果表示、反映APIの関数
     *
+    * DB上のバトルデータから結果情報を取得し、ステータスに反映後、返す。
     */
+
     public function getResult($battle_id)
     {
-        //進行中のバトルについて、戦闘終了情報が入力されるか5ターン経過するまでのデータを取得し、送信する。
-        $user_id = $this->userinfo->getUserID();
-        $user = $this->userinfo->getUserStatus($user_id);
+        # ユーザー情報の取得
+        $user = $this->userinfo->getUser();
+        # バトル情報の取得
+        $battle = $this->result->getBattleData($user);
 
-        $get_item_array = [
-            'TableName' => 'a_battles',
-            'Key' => [
-                'user_id' => [
-                    'N' => (string)$user_id
-                ],
-                'battle_id' => [
-                    'N' => (string)$battle_id
-                ]
-            ]
-        ];
-        #バトルデータの読み出し
-        try {
-            $result = $this->dynamodb->getItem($get_item_array);
-        } catch (DynamoDbException $e) {
-            echo $e->getMessage() . '\n';
-            return ['status: Failed to get BattleLog', 500];
-        }
-        $data = $this->marshaler->unmarshalItem($result['Item']);
-        if ($data['progress'] != 'in_process'){
-            return ['status: Battle is NOT in Process', 400];
-        }
+        #
+        # レスポンスの取得
+        $response = makeResponse($battle);
+
+        return [$response, 201];
+    }
+
+
+    /**
+     * [Method] バトルがin_processだった時の処理
+     * 戦果書き込み → 結果返信
+     */
+    private function caseInProcess(){
         $data['progress'] = 'closed';               #ステータスを終了済みにする
         $data['record'] = $this->record->updateRecordStatus($data['record']);
         #キャラデータ更新
-        for ($i = 0; $i < count($data['obtained']['chars']) ; $i++){
+        $chars_num = count($data['obtained']['chars']);
+        for ($i = 0; $i < $chars_num ; $i++){
             try {
                 $result = $this->dynamodb->getItem([
                     'TableName' => 'a_chars',
@@ -88,21 +72,29 @@ class Resultlogic extends Model
                 echo $e->getMessage();
                 return ['status: Failed to update Chardata', 500];
             }
+            $this->dynamodbhandler->putItem($,$);
         }
+    }
 
-        #バトルデータ更新
-        try{
-            $result = $this->dynamodb->putItem([
-                'TableName' => 'a_battles',
-                'Key' => $this->marshaler->marshalItem([
-                    'user_id' => (int)$user_id,
-                    'battle_id' => (int)$data['battle_id']
-                ]),
-                'Item' => $this->marshaler->marshalItem($data),
-            ]);
-        } catch (DynamoDbException $e) {
-            echo $e->getMessage();
-            return ['status: Failed to update Battlelog', 500];
+
+    /**
+     * [Method] バトルがクローズドだった時の処理
+     * 結果返信のみ
+     */
+    private function caseClosed(){
+
+    }
+
+    /**
+     * [Method] レスポンス生成の処理
+     */
+    private function makeResponse(){
+        switch ($battle['progress']){
+            case ('in_process'):
+                break;
+            case ('closed'):
+                break;
+
         }
         $response = [
             "is_win" => $data['is_win'],
@@ -112,6 +104,5 @@ class Resultlogic extends Model
             "chars" => $data['friend_position'],
             "obtained" => $data['obtained']['chars'],
         ];
-        return array($response, 201);
     }
 }
