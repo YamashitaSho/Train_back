@@ -18,11 +18,13 @@ class OrderLogic extends Model
     private $ERROR_JSON_UNAVAILABLE = ['JSON Error', 400];
     private $ERROR_SLOT_UNAVAILABLE = ['Slot Unavailable', 400];
 
+
     public function __construct()
     {
         $this->order = new OrderModel();
         $this->userinfo = new UserModel();
     }
+
 
     /**
     * [API] 編成画面情報取得APIで呼ばれる関数
@@ -34,10 +36,12 @@ class OrderLogic extends Model
         $user = $this->userinfo->getUser();
         #所持キャラ
         $chars = $this->order->readChar($user['user_id']);
-        #所持キャラのマスタ
-        $chars_master = $this->order->readCharMaster($chars);
-        #キャラデータをマスタと統合
-        $chars = $this->combineCharData($chars, $chars_master);
+        if (!empty($chars)) {
+            #所持キャラのマスタ
+            $chars_master = $this->order->readCharMaster($chars);
+            #キャラデータをマスタと統合
+            $chars = $this->combineCharData($chars, $chars_master);
+        }
         #アイテムデータ
         $items = $this->order->readItem($user['items']);
 
@@ -48,6 +52,7 @@ class OrderLogic extends Model
         ];
         return [$response,200];
     }
+
 
     /**
     * [API] 編成の入れ替えを実行する関数
@@ -82,6 +87,8 @@ class OrderLogic extends Model
         }
         return $response;
     }
+
+
     /**
     * [関数] リクエストのタイプを判別する
     *
@@ -98,6 +105,8 @@ class OrderLogic extends Model
         }
         return $request_type;
     }
+
+
     private function validateRequest($request)
     {
         $response = [];
@@ -113,6 +122,8 @@ class OrderLogic extends Model
         } while (false);
         return $response;
     }
+
+
     /**
     * [関数] トランとマスタのキャラデータを統合する
     */
@@ -142,6 +153,12 @@ class OrderLogic extends Model
     private function changeItem($request, $user)
     {
         $type = 'item_id';
+                #編成解除リクエスト
+        if ($this->isAlreadyOrdered($user['party'], $request, $type)){
+            $request['new_id'] = $this->UNSET_ID;
+        }
+
+
         #所持チェック
         if ( !$this->isPossess($user['items'], $request['new_id'], $type) ){
             return ['Item is not Possessed', 400];
@@ -157,6 +174,7 @@ class OrderLogic extends Model
         return [$request, 201];
     }
 
+
     /**
     * [関数] キャラ交換を実行できるかどうかを判定し、実行する 。
     *
@@ -165,7 +183,14 @@ class OrderLogic extends Model
     private function changeChar($request, $user)
     {
         $type = 'char_id';
+
+                #編成解除リクエスト
+        if ($this->isAlreadyOrdered($user['party'], $request, $type)){
+            $request['new_id'] = $this->UNSET_ID;
+        }
+
         $response = [$request, 201];
+
         #キャラの所持チェック
         #ユーザーが保持しているキャラ情報を読み込む(char_idのみ[第2引数で指定]
         $chars = $this->order->readChar($user['user_id'], true);
@@ -187,10 +212,28 @@ class OrderLogic extends Model
 
         return $response;
     }
+
+
+    /**
+     * [Method] キャラ編成解除処理
+     * 編成しようとしているキャラがすでに指定スロットに編成されている場合はtrueを返す
+     * (この結果を受けて編成を解除するリクエストに変更する)
+     */
+    private function isAlreadyOrdered($order, $request, $type)
+    {
+        $response = false;
+        if ($order[$request['slot']][$type] == $request['new_id']){
+            $response = true;
+        }
+
+        return $response;
+    }
+
+
     /**
      * [Method] item(キャラ、アイテム)の所持を返す
      *
-     * @return boolean 持っている:true
+     * @return boolean true : 持っている
      */
     private function isPossess($order, $new_id, $type)
     {
@@ -203,6 +246,8 @@ class OrderLogic extends Model
         }
         return $response;
     }
+
+
     /**
      * [Method] item(キャラ、アイテム)がすでに登録されていないかを返す
      *
