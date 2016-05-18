@@ -15,7 +15,13 @@ class MenuLogic extends Model
     */
     public function getMenu()
     {
-        $response = $this->userinfo->getUser();
+        $user = $this->userinfo->getUser();
+        $response = [
+            'money' => $user['money'],
+            'medal' => $user['medal'],
+            'leader_char_id' => $user['party'][0]['char_id'],
+            'quest_count' => $user['quest_count'],
+        ];
         return [$response, 200];
     }
 }
