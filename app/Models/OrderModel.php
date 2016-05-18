@@ -14,6 +14,7 @@ class OrderModel extends DynamoDBHandler
         $this->record = new Record();
     }
 
+
     /**
     * [関数] 所持しているキャラの読み込み
     *
@@ -27,6 +28,8 @@ class OrderModel extends DynamoDBHandler
                 ":user_id": '.$user_id.'
             }
         ');
+
+
         $query = [
             'TableName' => 'a_chars',
             'KeyConditionExpression' => 'user_id = :user_id',
@@ -46,6 +49,7 @@ class OrderModel extends DynamoDBHandler
         $chars = $this->queryItem($query, 'Failed to get CharData');
         return $chars;
     }
+
 
     /**
     * [関数] 所持しているキャラのマスターデータを読み込む。
@@ -76,6 +80,8 @@ class OrderModel extends DynamoDBHandler
         $chars_master = $this->batchGetItem($get, 'Failed to read CharData(Master)');
         return $chars_master['chars'];
     }
+
+
     /**
     * [関数] アイテムのデータを読み込む
     *
@@ -83,14 +89,6 @@ class OrderModel extends DynamoDBHandler
     */
     public function readItem($items)
     {
-        /*$item_num = count($items);
-        for ($i = 0; $i < $item_num; $i++){
-            $key[$i] = [
-                'item_id' => [
-                    'N' => (string)$items[$i]['item_id']
-                ]
-            ];
-        }*/
         $key = [];
         foreach ($items as $item){
             $key[] = [
@@ -115,6 +113,7 @@ class OrderModel extends DynamoDBHandler
         $items_master = $this->batchGetItem($get, 'Failed to read ItemData');
         return $items_master['items'];
     }
+
 
     /**
     * ユーザー情報の更新
