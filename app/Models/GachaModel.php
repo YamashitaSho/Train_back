@@ -1,12 +1,11 @@
 <?php
 namespace App\Models;
 
-require '../vendor/autoload.php';
-use Illuminate\Database\Eloquent\Model;
-
 use Aws\DynamoDb\Marshaler;
+use App\Models\TransactionModel;
 use App\Models\DynamoDBHandler;
 use App\Services\Common\Record;
+
 
 class GachaModel extends DynamoDBHandler
 {
@@ -14,11 +13,13 @@ class GachaModel extends DynamoDBHandler
     {
         $this->record = new Record();
         $this->marshaler = new Marshaler();
+        $this->trans = new TransactionModel();
 
         parent::__construct();
     }
     /**
     * [関数] 重み情報を読み込む
+    * @var $weights : 要素名[char_id] = [weight]
     */
     public function readWeight ()
     {
@@ -76,9 +77,9 @@ class GachaModel extends DynamoDBHandler
     }
 
     /**
-    * [関数] キャラデータ書き込み関数
+    * [関数] 入手キャラデータの整形関数
     */
-    public function writeChar($char, $user_id)
+    private function writeChar($user_id, $char, $record)
     {
         $key = [
             'user_id' => $user_id,
@@ -90,33 +91,58 @@ class GachaModel extends DynamoDBHandler
             'status' => $char['status'],
             'user_id' => $user_id,
             'char_id' => $char['char_id'],
-            'record' => $this->record->makeRecordStatus()
+            'record' => $record
         ];
         $put = [
             'TableName' => 'a_chars',
             'Key' => $this->marshaler->marshalItem($key),
             'Item' => $this->marshaler->marshalItem($item)
         ];
-        $this->putItem($put, 'Failed to Write CharData');
-        return ;
+        return $put;
     }
 
     /**
-    * [関数] ユーザーデータ書き込み関数
+    * [関数] ユーザーデータ書き込み変数の整形
     */
-    public function writeUser($user)
+    private function updateUser($user_id, $gacha_cost, $record)
     {
-        $user['record'] = $this->record->updateRecordStatus($user['record']);
         $key = [
-            'user_id' => $user['user_id']
+            'user_id' => [
+                'N' => (string)$user_id
+            ]
         ];
-        $item = $user;
-        $put = [
+        $expression_attribute_values = [
+            ':gacha_cost' => [
+                'N' => (string)$gacha_cost
+            ]
+        ];
+        $update_expression = 'set money = money - :gacha_cost';
+
+        $update = [
             'TableName' => 'a_users',
-            'Key' => $this->marshaler->marshalItem($key),
-            'Item' => $this->marshaler->marshalItem($item)
+            'Key' => $key,
+            'ExpressionAttributeValues' => $expression_attribute_values,
+            'UpdateExpression' => $update_expression
         ];
-        $this->putItem($put, 'Failed to Write UserData');
-        return ;
+        return $update;
     }
+    /**
+    * [関数] ガチャ結果書き込み関数
+    *
+    * フォーマットに従って変数を詰めた後トランザクションクラスに渡し、結果を返す
+    */
+    public function putGachaResult($user, $prize_char, $gacha_cost)
+    {
+        $record = $this->record->makeRecordStatus();
+        $char_put = $this->writeChar($user['user_id'], $prize_char, $record);
+        $user_update = $this->updateUser($user['user_id'], $gacha_cost, $record);
+        $requests = [
+            $char_put,
+            $user_update
+        ];
+
+        $result = $this->trans->isTransSuccess($user, $record, $requests);
+        return $result;
+    }
+
 }

@@ -1,9 +1,7 @@
 <?php
 namespace App\Models;
 
-require '../vendor/autoload.php';
 use Illuminate\Database\Eloquent\Model;
-
 use Exception;
 use Aws\DynamoDb\Exception\DynamoDbException;
 use Aws\DynamoDb\Marshaler;
@@ -12,6 +10,7 @@ use Aws\DynamoDb\Marshaler;
     * ダイナモDBにアクセスするためのクラス
     *
     * ダイナモDBに投げるリクエストをまとめたクラス
+    * エラー処理は各モデルに任せる方針に変更:20160426
     */
 class DynamoDBHandler extends Model
 {
@@ -32,40 +31,33 @@ class DynamoDBHandler extends Model
     /**
     * [関数] DynamoDBにgetItemを投げる関数
     *
-    * エラー処理も引き受ける getItemの返り値はunMarshalizeして送り返す
+    * getItemの返り値はunMarshalizeして送り返す
     * @param $get : DynamoDBにそのままリクエストできる形式のarray
-    * @param $exception エラー発生時のメッセージ
+    * @param $exception エラー発生時のメッセージだった 互換性を保ったままテストするために残している
     */
-    public function getItem($get, $exception)
+    public function getItem($get, $exception = '')
     {
-        try {
-            $result = $this->dynamodb->getItem($get);
-        } catch (DynamoDbException $e) {
-            echo $e->getMessage();
-            throw new Exception($exception);
-        }
+        $response = [];
+        $result = $this->dynamodb->getItem($get);
+
         if ( !empty($result['Item']) ){
             $response = $this->marshaler->unmarshalItem($result['Item']);
-            return $response;
         }
-        return [];
+        return $response;
     }
 
     /**
     * [関数] DynamoDBにbatchGetItemを投げる関数
     *
-    * エラー処理も引き受ける batchGetItemの返り値はunMarshalizeして送り返す
+    * batchGetItemの返り値はunMarshalizeして送り返す
     * @param $get : DynamoDBにそのままリクエストできる形式のarray
-    * @param $exception エラー発生時のメッセージ
+    * @param $exception エラー発生時のメッセージ 互換性を保ったままテストするために残している
     */
-    public function batchGetItem($get, $exception)
+    public function batchGetItem($get, $exception = '')
     {
-        try {
-            $result = $this->dynamodb->batchGetItem($get);
-        } catch (DynamoDbException $e) {
-            echo $e->getMessage();
-            throw new Exception($exception);
-        }
+        $response = [];
+        $result = $this->dynamodb->batchGetItem($get);
+
         $key_list = array_keys($result['Responses']);
 
         $key_num = count($key_list);
@@ -84,20 +76,17 @@ class DynamoDBHandler extends Model
     /**
     * [関数] DynamoDBにscanを投げる関数
     *
-    * エラー処理も引き受ける scanの返り値はunMarshalizeして送り返す
+    * scanの返り値はunMarshalizeして送り返す
     * @param $scan : DynamoDBにそのままリクエストできる形式のarray
-    * @param $exception エラー発生時のメッセージ
+    * @param $exception エラー発生時のメッセージ 互換性を保ったままテストするために残している
     */
-    public function scan($scan, $exception)
+    public function scan($scan, $exception = '')
     {
-        try {
-            $result = $this->dynamodb->scan($scan);
-        } catch (DynamoDbException $e) {
-            echo $e->getMessage();
-            throw new Exception($exception);
-        }
+        $response = [];
 
-        for ($i = 0; $i < count($result['Items']) ; $i++){
+        $result = $this->dynamodb->scan($scan);
+
+        for ($i = 0; $i < $result['Count'] ; $i++){
             $response[$i] = $this->marshaler->unmarshalItem($result['Items'][$i]);
         }
         return $response;
@@ -106,21 +95,20 @@ class DynamoDBHandler extends Model
     /**
     * [関数] DynamoDBにqueryを投げる関数
     *
-    * エラー処理も引き受ける queryの返り値はunMarshalizeして送り返す
+    * queryの返り値はunMarshalizeして送り返す
     * @param $query : DynamoDBにそのままリクエストできる形式のarray
-    * @param $exception エラー発生時のメッセージ
+    * @param $exception エラー発生時のメッセージ 互換性を保ったままテストするために残している
     */
-    public function queryItem($query, $exception)
+    public function queryItem($query, $exception = '')
     {
-        try {
-            $result = $this->dynamodb->query($query);
-        } catch (DynamoDbException $e) {
-            echo $e->getMessage();
-            throw new Exception($exception);
-        }
+        $result = $this->dynamodb->query($query);
 
-        for ($i = 0; $i < count($result['Items']) ; $i++){
-            $response[$i] = $this->marshaler->unmarshalItem($result['Items'][$i]);
+        if ($result['Count'] > 0){
+            for ($i = 0; $i < $result['Count'] ; $i++){
+                $response[$i] = $this->marshaler->unmarshalItem($result['Items'][$i]);
+            }
+        } else {
+            $response = [];
         }
         return $response;
     }
@@ -128,18 +116,21 @@ class DynamoDBHandler extends Model
     /**
     * [関数] DynamoDBにputItemを投げる関数
     *
-    * エラー処理も引き受ける
     * @param $get : DynamoDBにそのままリクエストできる形式のarray
-    * @param $exception エラー発生時のメッセージ
+    * @param $exception エラー発生時のメッセージ 互換性を保ったままテストするために残している
     */
-    public function putItem($put, $exception)
+    public function putItem($put, $exception = '')
     {
-        try {
-            $result = $this->dynamodb->putItem($put);
-        } catch (DynamoDbException $e) {
-            echo $e->getMessage();
-            throw new Exception($exception);
-        }
-        return;
+        $result = $this->dynamodb->putItem($put);
+        return $result;
+    }
+
+    /**
+    * [関数] DynamoDBにupdateItemを投げる関数
+    */
+    public function updateItem($update)
+    {
+        $result = $this->dynamodb->updateItem($update);
+        return $result;
     }
 }
