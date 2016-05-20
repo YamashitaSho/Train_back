@@ -17,6 +17,8 @@ class BattleLogic extends Model
         $this->battle = new BattleModel();
         $this->userinfo = new UserModel();
     }
+
+
     /**
     * [API] バトル経過生成APIの関数
     *
@@ -36,24 +38,40 @@ class BattleLogic extends Model
         if ($battle['progress'] == 'created'){
             #created: バトルの進行データを作成し、初期状態を送信
             $battle['progress'] = 'in_process';
-            $response = [$battle, 201];              #初期状態
+            $response = [$this->setResponse($battle), 201];
             #バトル進行データを作成
             $battle = $this->battleMain($battle);
             #バトル結果を書き込み
             $this->battle->writeBattle($user, $battle);
+            print_r($battle);
 
         } else if ( $battle['progress'] == 'in_process'){
             #in process: 保存されていたデータを返す
-            $response = [$battle, 201];
+            $response = [$this->setResponse($battle), 201];
 
         } else if ( $battle['progress'] == 'closed'){
             #closed: 終了した戦闘 のエラーを返す
             $response = ['status: Already Closed Battle', 400];
-
         };
 
         return $response;
     }
+
+
+    /**
+     * [Method] setBattleAPIで返す要素のみを配列に詰めて返す
+     */
+    private function setResponse($battle)
+    {
+        $response = [
+            "friend_position" => $battle['friend_position'],
+            "enemy_position" => $battle['enemy_position'],
+            "type" => $battle['type']
+        ];
+        return $response;
+    }
+
+
     /**
     * [API] ターン経過取得APIのServiceクラス
     *
@@ -72,6 +90,8 @@ class BattleLogic extends Model
         }
     return $response;
     }
+
+
     /**
     * バトルキャラ設定
     * バトル参加キャラを一つの配列にまとめる
@@ -91,6 +111,8 @@ class BattleLogic extends Model
         }
         return $response;
     }
+
+
     /**
     * バトルの進行データ作成処理
     */
@@ -124,6 +146,8 @@ class BattleLogic extends Model
         #受け取った引数と同じ形式で返す
         return $battle;
     }
+
+
     /**
     * 戦闘開始時のバトルログ生成
     * @param $battle_log : battle_log(0ターン目)
@@ -144,6 +168,8 @@ class BattleLogic extends Model
         }
         return $battle_log;
     }
+
+
     /**
     * ターンごとのバトルログ生成
     */
@@ -165,6 +191,8 @@ class BattleLogic extends Model
         }
         return $log;
     }
+
+
     /**
     * キャラの行動順決定
     * @return $sequence : 速度が高かった順に['position']要素として隊列番号が格納されている
@@ -184,6 +212,8 @@ class BattleLogic extends Model
         });
         return $sequence;
     }
+
+
     /**
     * キャラの行動ログ生成
     * @param &$log   : ターンごとのログ $target['hp']要素にアクセスし、HPを更新する
@@ -215,6 +245,7 @@ class BattleLogic extends Model
         return $action;
     }
 
+
     /**
     * キャラが敵軍か友軍かの判定
     */
@@ -231,6 +262,8 @@ class BattleLogic extends Model
         }
         return $target;
     }
+
+
     /**
     * 勝敗を取得する
     * 味方が勝っていればtrue 敵が勝っていればfalse
@@ -243,6 +276,8 @@ class BattleLogic extends Model
 
         return $result;
     }
+
+
     /**
     * [関数] 成果物の作成
     */
@@ -256,6 +291,8 @@ class BattleLogic extends Model
         ];
         return $obtained;
     }
+
+
     /**
     * 8分の7倍〜8分の9倍にする乱数を生成する
     */
@@ -264,6 +301,8 @@ class BattleLogic extends Model
         $result = mt_rand($number*7/8, $number*9/8);
         return $result;
     }
+
+
     /**
     * [関数] 経験値の算出
     * $gainexp : 獲得経験値 勝った場合は全額、 負けたら1/4
@@ -276,6 +315,8 @@ class BattleLogic extends Model
         }
         return $gainexp;
     }
+
+
     /**
     * [関数] 参戦キャラに経験値を適用したものを返す
     * @param $chars   : 各キャラの経験値追加後のパラメータ
@@ -298,6 +339,8 @@ class BattleLogic extends Model
         }
         return $response;
     }
+
+
     /**
     * [関数] キャラのレベルが上がった時の処理
     *
