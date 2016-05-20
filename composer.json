@@ -21,8 +21,8 @@
         "classmap": [
             "database",
             "app/Models",
-            "app/Services/Common",
-            "app/Services/Quest"
+            "app/Services",
+            "app/Services/Common"
         ],
         "psr-4": {
             "App\\": "app/"

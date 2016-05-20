@@ -10,8 +10,9 @@ class Menu extends Controller
 {
     public function index()
     {
-    	$myModel = new MenuLogic();
-    	$result = $myModel->getMenu();
-    	return \Response::json($result[0],$result[1]);
+        $this->middleware('cors');
+        $myModel = new MenuLogic();
+        $result = $myModel->getMenu();
+        return \Response::json($result[0],$result[1]);
     }
 }

@@ -1,9 +1,7 @@
 <?php
 namespace App\Services;
 
-require '../vendor/autoload.php';
 use Illuminate\Database\Eloquent\Model;
-
 use App\Models\BattleModel;
 use App\Models\UserModel;
 
@@ -20,7 +18,7 @@ class BattleLogic extends Model
         $this->userinfo = new UserModel();
     }
     /**
-    * [API] バトル経過生成APIのServiceクラス
+    * [API] バトル経過生成APIの関数
     *
     * usersテーブルにあるbattle_idのバトルを進行し、バトルの初期状態を返す。
     * 該当バトルのステータスを確認し、createdでなければ進行しない。
@@ -225,7 +223,8 @@ class BattleLogic extends Model
         $target = [];
         if (strstr($position, 'friend')){
             $target['hp'] = 'enemy_hp';
-            $target['position'] = 3;                            #敵キャラが入っているのは味方の3つ分先
+            # 敵キャラが入っている隊列
+            $target['position'] = $this->CHARS_NUM;
         } else {
             $target['hp'] = 'friend_hp';
             $target['position'] = 0;
@@ -245,12 +244,12 @@ class BattleLogic extends Model
         return $result;
     }
     /**
-    *
+    * [関数] 成果物の作成
     */
     private function setObtained($response)
     {
         $gainexp = $this->setGainExp($response['enemy_position'], $response['is_win']);
-        $chars = $this->setParamObtained($response['friend_position'], $obtained['gainexp']);
+        $chars = $this->setParamObtained($response['friend_position'], $gainexp);
         $obtained = [
             'gainexp' => $gainexp,
             'chars' => $chars,
@@ -266,8 +265,7 @@ class BattleLogic extends Model
         return $result;
     }
     /**
-    * 経験値獲得関数
-    * $obtained : 成果物 経験値、レベルアップパラメータ、アイテム
+    * [関数] 経験値の算出
     * $gainexp : 獲得経験値 勝った場合は全額、 負けたら1/4
     */
     private function setGainExp($enemy_position, $is_win){

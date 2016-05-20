@@ -35,13 +35,8 @@ class GachaLogic extends Model
         #ユーザー情報
         $user = $this->usermodel->getuser();
 
-        #全キャラの重み配列
-        $weights = $this->gacha->readWeight();
-        #手持ちキャラのリスト
-        $own = $this->gacha->readChar($user['user_id']);
-        #実際のガチャ配列
-        $gachabox = $this->makeGachaBox($weights, $own);
-
+        #重み配列を読み込む
+        $gachabox = $this->getGachaBox($user['user_id']);
         #残りキャラ数
         $rest_char = $this->getRestChars($gachabox);
         #ガチャ料金
@@ -65,12 +60,8 @@ class GachaLogic extends Model
         #ユーザー情報
         $user = $this->usermodel->getuser();
 
-        #全キャラの重み配列
-        $weights = $this->gacha->readWeight();
-        #手持ちキャラのリスト
-        $own = $this->gacha->readChar($user['user_id']);
-        #実際のガチャ配列
-        $gachabox = $this->makeGachaBox($weights, $own);
+        #重み配列を読み込む
+        $gachabox = $this->getGachaBox($user['user_id']);
 
         #残りキャラ数
         $rest_char = $this->getRestChars($gachabox);
@@ -80,23 +71,13 @@ class GachaLogic extends Model
         $availability = $this->getAvailability($user['money'], $gacha_cost, $rest_char);
 
         if ($availability){
-            #$prize_id : 獲得キャラのchar_id(抽選する)
-            $prize_id = $this->turnGacha($gachabox);
-            #獲得キャラの情報
-            $prize_char = $this->gacha->readPrize($prize_id);
-
+            #$prize_char : 獲得キャラ(抽選する)
+            $prize_char = $this->turnGacha($gachabox);
             #DBの更新
-            $result = $this->gacha->putGachaResult($user, $prize_char, $gacha_cost);
+            $result = $this->gacha->putGachaResult($user, $prize_char, $gacha_cost, $gachabox);
 
             if ($result){
-                $response = [
-                    [
-                        'char_id' => $prize_char['char_id'],
-                        'name' => $prize_char['name'],
-                        'status' => $prize_char['status']
-                    ],
-                    201
-                ];
+                $response = [$prize_char, 201];
             } else {
                 #トランザクションが失敗
                 $response = ['Service Unavailable', 503];
@@ -107,18 +88,43 @@ class GachaLogic extends Model
         return $response;
     }
 
+
+    /**
+     * [Method] ガチャの重み配列を取得する
+     * @return ガチャの重みの配列 [{char_id => weight}]
+     */
+    private function getGachaBox($user_id)
+    {
+
+        $gachabox = $this->gacha->readGachaBox($user_id);
+        #ガチャ配列が保存されていない
+        if (empty($gachabox)){
+
+            #実際のガチャ配列
+            $gachabox = $this->makeGachaBox($user_id);
+            #ガチャ配列を保存しておく
+            $this->gacha->putGachaBox($user_id, $gachabox);
+        }
+
+        return $gachabox;
+    }
+
+
     /**
     * [関数] ガチャを引く重み配列を作成する
     *
-    * @param $weights : 全キャラの重み配列(char_idの連想配列)
+    * @param $gachabox  : 全キャラの重み配列(char_idの連想配列)
     * @param $own_chars : 所持キャラのchar_id情報
     */
-    private function makeGachaBox($weights, $own_chars)
+    private function makeGachaBox($user_id)
     {
+        #全キャラの重み配列
+        $gachabox = $this->gacha->readWeight();
+        #手持ちキャラのリスト
+        $own_chars = $this->gacha->readChar($user_id);
         foreach ($own_chars as $own_char){
-            $weights[$own_char['char_id']] = 0;
+            $gachabox[$own_char['char_id']] = 0;
         }
-        $gachabox = $weights;
         return $gachabox;
     }
 
@@ -133,7 +139,6 @@ class GachaLogic extends Model
                 $rest_char ++;
             }
         }
-
         return $rest_char;
     }
     /**
@@ -166,7 +171,7 @@ class GachaLogic extends Model
 
     /**
     * [関数] ガチャの抽選を行う
-    * @return $prize_id : 獲得キャラのchar_id
+    * @return $prize_char : 獲得キャラ
     */
     private function turnGacha($gachabox)
     {
@@ -177,20 +182,10 @@ class GachaLogic extends Model
             $prize_id = $i;
             $gacha_rand -= $gachabox[$i];
         }
-        return $prize_id;
+
+        $prize_char = $this->gacha->readPrize($prize_id);
+        return $prize_char;
     }
 
-    /**
-    * [関数] 料金を徴収、更新処理を行うAPI
-    *
-    * 書き込みに失敗した場合のトランザクション処理も行わなければならない(未実装)。
-    */
-    private function updateData($prize_char, $user, $gacha_cost)
-    {
-/*        $user['money'] -= $gacha_cost;
-        $this->gacha->writeChar($prize_char, $user['user_id']);
-        $this->gacha->writeUser($user);
-*/
-        return 0;
-    }
+
 }

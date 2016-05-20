@@ -1,5 +1,5 @@
 <?php
-require '../vendor/autoload.php';
+require 'vendor/autoload.php';
 
 $sdk = new Aws\Sdk([
 //    'endpoint'   => 'https://dynamodb.ap-northeast-1.amazonaws.com',
@@ -17,9 +17,10 @@ use Aws\DynamoDb\Marshaler;
 $dynamodb = $sdk->createDynamoDb();
 $marshaler = new Marshaler();
 
-$tableName = 'enemies';
+$tableName = 'chars';
 
-$data = json_decode(file_get_contents('enemydata.json'), true);
+$data = [];
+$data = json_decode(file_get_contents('Dataset/Data/chars.json'), true);
 
 foreach ($data as $record) {
 
@@ -30,6 +31,7 @@ foreach ($data as $record) {
 
     try {
         $result = $dynamodb->putItem($params);
+        echo "Added char_id:".$record['char_id']."\n";
     } catch (DynamoDbException $e) {
         echo "Failed to Add Data:\n";
         echo $e->getMessage() . "\n";
