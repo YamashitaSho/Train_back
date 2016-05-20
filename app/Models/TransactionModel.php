@@ -136,7 +136,7 @@ class TransactionModel extends DynamoDBHandler
     */
     private function runTransaction($requests, $user_id, $queue_id)
     {
-        $is_success = true;
+        $is_success = false;
         $lock       = true;
         $retry      = 0;
         #ロック解除が確認できるまでリトライ RETRY_MAXに達したら終わり
@@ -376,14 +376,16 @@ class TransactionModel extends DynamoDBHandler
                     #自分のキューIDがあったらロールバック
                     if (empty($present_data[$key])){
                         #成功するまで項目削除のリトライ
+                        $this->cancelPut($request['TableName'], $request['Key']);
                     } else {
                         #成功するまで以前の項目を書き込む
+                        $this->restoreBackUp($request['TableName'], $request['Key'], $present_data[$key]);
                     }
                 } else {
-                    #他のqueue_idについては無視
+                    #他のqueue_idは無視
                 }
             } else {
-                #書き込みしていない項目についても無視
+                #書き込みしていない項目は無視
             }
         }
         return ;
@@ -405,7 +407,6 @@ class TransactionModel extends DynamoDBHandler
         ];
         $result = $this->getItem($get);
         $lock = (isset($result['Lock'])) ? $result['Lock'] : null;
-       # dd($lock);
         return $lock;
     }
 
@@ -422,6 +423,27 @@ class TransactionModel extends DynamoDBHandler
         do{
             try {
                 $this->putItem($put);
+            } catch (DynamoDbException $e){
+                usleep(100000);
+                continue;
+            }
+        } while (false);
+        return ;
+    }
+
+
+    /**
+     * [Method] PUTしたアイテムを削除する(失敗を許さない)
+     */
+    private function cancelPut($tablename, $key)
+    {
+        $delete = [
+            'TableName' => $tablename,
+            'Key' => $key,
+        ];
+        do{
+            try {
+                $this->deleteItem($delete);
             } catch (DynamoDbException $e){
                 usleep(100000);
                 continue;

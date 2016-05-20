@@ -4,7 +4,7 @@
   "char_id": 0,
   "level": 0,
   "exp": 20,
-  "name": "テスト",
+  "name": "テスト0",
   "status": {
     "attack": 0,
     "endurance": 0,
@@ -17,7 +17,7 @@
   "char_id": 1,
   "level": 0,
   "exp": 30,
-  "name": "テスト",
+  "name": "テスト1",
   "status": {
     "attack": 10,
     "endurance": 0,
@@ -30,7 +30,7 @@
   "char_id": 2,
   "level": 5,
   "exp": 40,
-  "name": "テスト",
+  "name": "テスト2",
   "status": {
     "attack": 20,
     "endurance": 0,
@@ -43,7 +43,7 @@
   "char_id": 3,
   "level": 0,
   "exp": 15,
-  "name": "テスト",
+  "name": "テスト3",
   "status": {
     "attack": 30,
     "endurance": 0,
@@ -56,7 +56,7 @@
   "char_id": 4,
   "level": 0,
   "exp": 35,
-  "name": "テスト",
+  "name": "テスト4",
   "status": {
     "attack": 40,
     "endurance": 0,
@@ -69,7 +69,7 @@
   "char_id": 5,
   "level": 0,
   "exp": 55,
-  "name": "テスト",
+  "name": "テスト5",
   "status": {
     "attack": 50,
     "endurance": 0,
@@ -82,7 +82,7 @@
   "char_id": 6,
   "level": 0,
   "exp": 80,
-  "name": "テスト",
+  "name": "テスト6",
   "status": {
     "attack": 60,
     "endurance": 0,
@@ -95,7 +95,7 @@
   "char_id": 7,
   "level": 0,
   "exp": 60,
-  "name": "テスト",
+  "name": "テスト7",
   "status": {
     "attack": 70,
     "endurance": 0,
@@ -108,7 +108,7 @@
   "char_id": 8,
   "level": 0,
   "exp": 30,
-  "name": "テスト",
+  "name": "テスト8",
   "status": {
     "attack": 80,
     "endurance": 0,
@@ -121,7 +121,7 @@
   "char_id": 9,
   "level": 0,
   "exp": 40,
-  "name": "テスト",
+  "name": "テスト9",
   "status": {
     "attack": 90,
     "endurance": 0,
@@ -134,7 +134,7 @@
   "char_id": 10,
   "level": 0,
   "exp": 50,
-  "name": "テスト",
+  "name": "テスト10",
   "status": {
     "attack": 100,
     "endurance": 0,
@@ -147,7 +147,7 @@
   "char_id": 11,
   "level": 0,
   "exp": 10,
-  "name": "テスト",
+  "name": "テスト11",
   "status": {
     "attack": 110,
     "endurance": 0,
@@ -160,7 +160,7 @@
   "char_id": 12,
   "level": 0,
   "exp": 120,
-  "name": "テスト",
+  "name": "テスト12",
   "status": {
     "attack": 120,
     "endurance": 0,
