@@ -24,7 +24,7 @@
 
 Route::group(['middleware' => ['web']], function () {
 
-    Route::resource('v1/quest', 'Lists\Quest', ['only' => ['store']]);
+    Route::resource('v1/quest', 'Lists\Quest', ['only' => ['index', 'store']]);
     Route::resource('v1/stage', 'Lists\Stage', ['only' => ['index', 'store']]);
     Route::resource('v1/battle', 'Lists\Battle', ['only' => ['show', 'update']]);
     Route::resource('v1/battle/result', 'Lists\Result', ['only' => ['update']]);

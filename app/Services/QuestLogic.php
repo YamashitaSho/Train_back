@@ -19,6 +19,18 @@ class QuestLogic extends Model
 
 
     /**
+     * [API] 現在のパーティキャラを取得する関数
+     */
+    public function getParty()
+    {
+        $user = $this->userinfo->getUser();
+        $chars = $this->quest->readCharInParty($user);
+        $response = [$chars, 200];
+        return $response;
+    }
+
+
+    /**
     * [API] クエストコマンドからのバトルを作成する関数
     *
     * バトル作成可能条件: ユーザーデータで指定されるバトルデータがclosedであること(created, in processの場合は作成せずにすでにある番号を渡す)
@@ -26,7 +38,6 @@ class QuestLogic extends Model
     public function joinQuest()
     {
         $user = $this->userinfo->getUser();
-       # $quest = new QuestObject()
         if ($user['battle_id'] == 0){
             return true;                           #バトルIDが0の場合は再利用しない
         }

@@ -24,7 +24,7 @@ class ResultModel extends DynamoDBhandler
                 'N' => (string)$user['user_id']
             ],
             'battle_id' => [
-                'N' =< (string)$user['battle_id']
+                'N' => (string)$user['battle_id']
             ]
         ];
         $get = [
@@ -45,7 +45,7 @@ class ResultModel extends DynamoDBhandler
                 'N' => (string)$battle['user_id']
             ],
             'battle_id' => [
-                'N' =< (string)$battle['battle_id']
+                'N' => (string)$battle['battle_id']
             ]
         ];
         $item = $this->marshaler->marshalItem($battle);

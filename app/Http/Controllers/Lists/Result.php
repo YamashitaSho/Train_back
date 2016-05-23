@@ -9,10 +9,12 @@ use App\Http\Controllers\Controller;
 
 class Result extends Controller
 {
+
+
     public function update($battle_id)
     {
-    	$myModel = new Resultlogic();
-    	$result = $myModel->getResult($battle_id);
+        $myModel = new Resultlogic();
+        $result = $myModel->getResult($battle_id);
         return \Response::json($result[0],$result[1]);
     }
 }

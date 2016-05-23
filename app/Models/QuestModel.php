@@ -106,14 +106,19 @@ class QuestModel extends DynamoDBHandler
     {
         $key = [];
         foreach ($user['party'] as $char){
-            $key[] = [
-                'user_id' => [
-                    'N' => (string)$user['user_id']
-                ],
-                'char_id' => [
-                    'N' => (string)$char['char_id']
-                ]
-            ];
+            if ($char['char_id'] != 0){     //キャラID 0 は読み込まない
+                $key[] = [
+                    'user_id' => [
+                        'N' => (string)$user['user_id']
+                    ],
+                    'char_id' => [
+                        'N' => (string)$char['char_id']
+                    ]
+                ];
+            }
+        }
+        if ( empty($key) ){
+            return [];
         }
         $get = [
             'RequestItems' => [
