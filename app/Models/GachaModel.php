@@ -150,6 +150,7 @@ class GachaModel extends DynamoDBHandler
             'char_id' => $char['char_id']
         ];
         $item = [
+            'name' => $char['name'],
             'exp' => $char['exp'],
             'level' => $char['level'],
             'status' => $char['status'],

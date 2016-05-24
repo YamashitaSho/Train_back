@@ -153,10 +153,11 @@ class StageModel extends DynamoDBHandler
             'RequestItems' => [
                 'a_chars' => [
                     'Keys' => $key,
-                    'ProjectionExpression' => 'char_id, exp, #lv, #st',
+                    'ProjectionExpression' => 'char_id, exp, #lv, #st, #nm',
                     'ExpressionAttributeNames' => [
                         '#lv' => 'level',
                         '#st' => 'status',
+                        '#nm' => 'name'
                     ]
                 ]
             ]

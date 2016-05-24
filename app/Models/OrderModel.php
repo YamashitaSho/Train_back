@@ -18,7 +18,7 @@ class OrderModel extends DynamoDBHandler
     /**
     * [関数] 所持しているキャラの読み込み
     *
-    * 読み込むデータ: char_id, level, exp, status
+    * 読み込むデータ: char_id, level, exp, status, name
     * $idonly に trueが指定された場合、 読み込むデータは char_id のみ
     */
     public function readChar($user_id, $idonly = false)
@@ -39,10 +39,11 @@ class OrderModel extends DynamoDBHandler
         if ($idonly) {
             $query['ProjectionExpression'] = 'char_id';
         } else {
-            $query['ProjectionExpression'] = 'char_id, exp, #lv, #st';
+            $query['ProjectionExpression'] = 'char_id, exp, #lv, #st, #nm';
             $query['ExpressionAttributeNames'] = [
                 '#lv' => 'level',
                 '#st' => 'status',
+                '#nm' => 'name',
             ];
         }
 
@@ -54,7 +55,7 @@ class OrderModel extends DynamoDBHandler
     /**
     * [関数] 所持しているキャラのマスターデータを読み込む。
     *
-    * 読み込むデータ: char_id, name, status_max
+    * 読み込むデータ: char_id, status_max
     */
     public function readCharMaster($chars)
     {
@@ -70,10 +71,7 @@ class OrderModel extends DynamoDBHandler
             'RequestItems' => [
                 'chars' => [
                     'Keys' => $key,
-                    'ProjectionExpression' => 'char_id, #nm, status_max',
-                    'ExpressionAttributeNames' => [
-                        '#nm' => 'name'
-                    ]
+                    'ProjectionExpression' => 'char_id, status_max'
                 ]
             ]
         ];
