@@ -43,8 +43,8 @@ class QuestLogic extends Model
             #バトルIDを一つ進める
             $user['battle_id'] ++;
             #仮enemyparty_id()
-            $enemyparty_id = 0;
-            $enemyparty = $this->quest->readEnemyParty($enemyparty_id);
+
+            $enemyparty = $this->getQuestEnemy();
             $enemy_position = $this->quest->readEnemy($enemyparty['party']);
             $friend_position = $this->quest->readCharInParty($user);
             #ユーザーデータの書き込み(トランザクションに要変更)
@@ -72,5 +72,53 @@ class QuestLogic extends Model
             }
         }
         return $res;
+    }
+
+
+    /**
+     * [Method] クエストで登場する敵パーティを読み込み、抽選して返す
+     */
+    private function getQuestEnemy()
+    {
+
+        $enemyparties = $this->getEnemyParties();
+        $enemyparty = $this->chooseEnemyParty($enemyparties);
+
+        return $enemyparty;
+    }
+
+
+    /**
+     * [Method] 敵パーティデータを読み込む
+     */
+    private function getEnemyParties()
+    {
+        $url = '../Dataset/Data/enemyparties.json';
+        $json = file_get_contents($url);
+        $enemyparties = json_decode($json, TRUE);       //連想配列
+        return $enemyparties;
+    }
+
+
+    /**
+     * [Method] 敵パーティを抽選する
+     */
+    private function chooseEnemyParty($enemyparties)
+    {
+        $party_weights = [];
+        $weight_sum = 0;
+        foreach($enemyparties as $party){
+            $party_weights[] = $party['quests'][0]['weight'];
+            $weight_sum += $party['quests'][0]['weight'];
+        }
+        $choose_rand = mt_rand(0, $weight_sum);
+
+        $enemyparty = $enemyparties[0];
+        for ($i = 0; $choose_rand > 0 ; $i++){
+            $enemyparty = $enemyparties[$i];
+            $choose_rand -= $party_weights[$i];
+        }
+
+        return $enemyparty;
     }
 }
