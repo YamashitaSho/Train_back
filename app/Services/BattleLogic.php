@@ -43,7 +43,6 @@ class BattleLogic extends Model
             $battle = $this->battleMain($battle);
             #バトル結果を書き込み
             $this->battle->writeBattle($user, $battle);
-            print_r($battle);
 
         } else if ( $battle['progress'] == 'in_process'){
             #in process: 保存されていたデータを返す

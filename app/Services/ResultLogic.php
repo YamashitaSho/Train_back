@@ -81,7 +81,9 @@ class Resultlogic extends Model
     /**
      * [Method] レスポンス生成の処理
      */
-    private function makeResponse($user, $data){
+    private function makeResponse($user, $data)
+    {
+        $data['obtained']['prize'] = $this->setPrize($data);
         switch ($data['progress']){
             case ('in_process'):
                 $res = $this->caseInProcess($user, $data);
@@ -94,10 +96,23 @@ class Resultlogic extends Model
             "is_win" => $data['is_win'],
             "get_item" => "",
             "money" => $user['money'],
-            "prize" => 150,
+            "prize" => $data['obtained']['prize'],
             "chars" => $data['friend_position'],
             "obtained" => $data['obtained']['chars'],
         ];
+        return $response;
+    }
+
+
+    /**
+     * 報酬金額の設定
+     */
+    private function setPrize($data)
+    {
+        $response = 0;
+        if ($data['type'] == 'quest'){
+            $response = $data['obtained']['gainexp'];
+        }
         return $response;
     }
 }

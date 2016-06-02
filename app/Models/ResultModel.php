@@ -184,10 +184,11 @@ class ResultModel extends DynamoDBHandler
     *
     * フォーマットに従って変数を詰めた後トランザクションクラスに渡し、結果を返す
     */
-    public function putBattleResult($user, $party, $battle, $prize)
+    public function putBattleResult($user, $party, $battle)
     {
         $chars_update = [];
         $record = $this->record->makeRecordStatus();
+        $prize = $battle['obtained']['prize'];
 
         foreach($party as $char){
             $char['record'] = $this->record->updateRecordStatus($char['record']);
