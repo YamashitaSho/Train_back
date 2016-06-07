@@ -34,6 +34,8 @@ Route::group(['middleware' => ['web']], function () {
     Route::resource('v1/menu', 'Lists\Menu', ['only' => ['index']]);
 
     Route::resource('v1/order', 'Lists\Order', ['only' => ['index', 'update']]);
+
+    Route::resource('v1/auth/google/{id}', 'Lists\Auth', ['only' => ['index']]);
 });
 
 /*//認証のルート定義

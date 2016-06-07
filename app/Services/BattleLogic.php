@@ -287,6 +287,7 @@ class BattleLogic extends Model
         $obtained = [
             'gainexp' => $gainexp,
             'chars' => $chars,
+            'prize' => $gainexp,
         ];
         return $obtained;
     }

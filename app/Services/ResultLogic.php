@@ -25,11 +25,21 @@ class Resultlogic extends Model
         # バトル情報の取得
         $battle = $this->result->getBattleData($user);
 
-        #
+        $response = [];
         # レスポンスの取得
-        $response = $this->makeResponse($user, $battle);
-
-        return [$response, 201];
+        switch ($battle['progress']){
+            case ('created'):
+                $response = ["battle did not run", 400];
+                break;
+            case ('in_process'):
+                $res = $this->caseInProcess($user, $battle);
+                $response = [$this->makeResponse($user, $battle), 201];
+                break;
+            case ('closed'):
+                $response = [$this->makeResponse($user, $battle), 201];
+                break;
+        }
+        return $response;
     }
 
 
@@ -83,15 +93,6 @@ class Resultlogic extends Model
      */
     private function makeResponse($user, $data)
     {
-        $data['obtained']['prize'] = $this->setPrize($data);
-        switch ($data['progress']){
-            case ('in_process'):
-                $res = $this->caseInProcess($user, $data);
-                break;
-            case ('closed'):
-                break;
-
-        }
         $response = [
             "is_win" => $data['is_win'],
             "get_item" => "",
@@ -100,12 +101,13 @@ class Resultlogic extends Model
             "chars" => $data['friend_position'],
             "obtained" => $data['obtained']['chars'],
         ];
+
         return $response;
     }
 
 
     /**
-     * 報酬金額の設定
+     * [Method] 報酬金額の設定
      */
     private function setPrize($data)
     {
