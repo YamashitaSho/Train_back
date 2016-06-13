@@ -89,9 +89,18 @@ class OrderModel extends DynamoDBHandler
     {
         $key = [];
         foreach ($items as $item){
+            if ($item['item_id'] != 0){
+                $key[] = [
+                    'item_id' => [
+                        'N' => (string)$item['item_id']
+                    ]
+                ];
+            }
+        }
+        if (empty($key)){
             $key[] = [
                 'item_id' => [
-                    'N' => (string)$item['item_id']
+                    'N' => '0'
                 ]
             ];
         }
