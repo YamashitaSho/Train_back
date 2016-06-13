@@ -12,10 +12,10 @@ class BattleLogic extends Model
 
     private $INITIAL_HP = 300;  #初期HP
 
-    public function __construct()
+    public function __construct($user_id)
     {
         $this->battle = new BattleModel();
-        $this->userinfo = new UserModel();
+        $this->userinfo = new UserModel($user_id);
     }
 
 

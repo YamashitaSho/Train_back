@@ -5,7 +5,11 @@ namespace App\Http\Controllers\Auth;
 use App\User;
 use Validator;
 use Socialite;
+use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+
 //use App\Http\Controllers\Controller;
+use App\Http\Controllers\Auth\LoginControl;
 use Illuminate\Routing\Controller;
 use Illuminate\Foundation\Auth\ThrottlesLogins;
 use Illuminate\Foundation\Auth\AuthenticatesAndRegistersUsers;
@@ -39,6 +43,7 @@ class AuthController extends Controller
      */
     public function __construct()
     {
+        $this->login = new LoginControl();
         $this->middleware('guest', ['except' => 'logout']);
     }
 
@@ -71,18 +76,24 @@ class AuthController extends Controller
             'password' => bcrypt($data['password']),
         ]);
     }
+
+
     public function redirectToProvider()
     {
         return Socialite::driver('google')->redirect();
     }
-    public function handleProviderCallback()
-    {
-        $user = Socialite::driver('google')->user();
-        echo json_encode($user);
-        //セッションをここで作成する
-        //セッション作成
-        // $user->token;
 
+
+    public function handleProviderCallback(Request $request)
+    {
+        #セッションの確認
+        $id = $request->session()->get('user_id');
+        if (!$id){
+            $user = Socialite::driver('google')->user();
+            $user_id = $this->login->loginService($user);
+            $request->session()->put('user_id', $user_id);
+        }
+        header('Location: http://train-yama.nurika.be:8000/Train_front/main.html');
     }
 
 }

@@ -21,10 +21,10 @@ class GachaLogic extends Model
     private $usermodel;
     private $gacha;
 
-    public function __construct()
+    public function __construct($user_id)
     {
         $this->gacha = new GachaModel();
-        $this->usermodel = new UserModel();
+        $this->usermodel = new UserModel($user_id);
     }
 
     /**

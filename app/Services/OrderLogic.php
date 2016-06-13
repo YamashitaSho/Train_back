@@ -19,10 +19,10 @@ class OrderLogic extends Model
     private $ERROR_SLOT_UNAVAILABLE = ['Slot Unavailable', 400];
 
 
-    public function __construct()
+    public function __construct($user_id)
     {
         $this->order = new OrderModel();
-        $this->userinfo = new UserModel();
+        $this->userinfo = new UserModel($user_id);
     }
 
 
@@ -45,6 +45,9 @@ class OrderLogic extends Model
         #アイテムデータ
         $items = $this->order->readItem($user['items']);
 
+        if (empty($user['party'])){
+            $user['party'] = [['char_id' => 0],['char_id' => 0],['char_id' => 0]];
+        }
         $response = [
             'party' => $user['party'],
             'chars' => $chars,
@@ -219,10 +222,10 @@ class OrderLogic extends Model
      * 編成しようとしているキャラがすでに指定スロットに編成されている場合はtrueを返す
      * (この結果を受けて編成を解除するリクエストに変更する)
      */
-    private function isAlreadyOrdered($order, $request, $type)
+    private function isAlreadyOrdered($party, $request, $type)
     {
         $response = false;
-        if ($order[$request['slot']][$type] == $request['new_id']){
+        if ($party[$request['slot']][$type] == $request['new_id']){
             $response = true;
         }
 

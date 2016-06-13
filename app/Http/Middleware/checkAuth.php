@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 class checkAuth
 {
@@ -14,10 +15,10 @@ class checkAuth
      * @param  \Closure  $next
      * @return mixed
      */
-    public function handle($request, Closure $next)
+    public function handle(Request $request, Closure $next)
     {
-        if (! Auth::check()) {
-            return \Redirect::to('v1/');
+        if (!$request->session()->has('user_id')){
+            return \Response::json('Unauthorized', 401);
         }
         return $next($request);
     }

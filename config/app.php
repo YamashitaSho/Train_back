@@ -156,7 +156,7 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
 
-        BaoPham\DynamoDb\DynamoDbserviceProvider::class,
+        BaoPham\DynamoDb\DynamoDbServiceProvider::class,
 
         Laravel\Socialite\SocialiteServiceProvider::class,
     ],
