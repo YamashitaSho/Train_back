@@ -11,10 +11,10 @@ use App\Models\StageModel;
  */
 class StageLogic extends Model
 {
-    public function __construct()
+    public function __construct($user_id)
     {
         $this->stage = new StageModel();
-        $this->userinfo = new UserModel();
+        $this->userinfo = new UserModel($user_id);
     }
 
 
@@ -30,16 +30,16 @@ class StageLogic extends Model
         $response = [
             "money" => $user['money'],
             "chars" => $chars,
-            "stages" => array(
+            "stages" => [
                 "stage_id" => 3,
                 "title" => "初級",
                 "entry_fee" => 100,
                 "prize" => 200,
                 "item_name" => "初級者卒業",
                 "clearcount" => 2
-            )
+            ]
         ];
-        return array($response,200);
+        return [$response,200];
     }
 
 
@@ -60,6 +60,6 @@ class StageLogic extends Model
         $response = array(
             "battle_id" => 1
         );
-        return array($response,201);
+        return [$response,201];
     }
 }

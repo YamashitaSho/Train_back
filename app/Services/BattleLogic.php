@@ -12,10 +12,10 @@ class BattleLogic extends Model
 
     private $INITIAL_HP = 300;  #初期HP
 
-    public function __construct()
+    public function __construct($user_id)
     {
         $this->battle = new BattleModel();
-        $this->userinfo = new UserModel();
+        $this->userinfo = new UserModel($user_id);
     }
 
 
@@ -43,7 +43,6 @@ class BattleLogic extends Model
             $battle = $this->battleMain($battle);
             #バトル結果を書き込み
             $this->battle->writeBattle($user, $battle);
-            print_r($battle);
 
         } else if ( $battle['progress'] == 'in_process'){
             #in process: 保存されていたデータを返す
@@ -288,6 +287,7 @@ class BattleLogic extends Model
         $obtained = [
             'gainexp' => $gainexp,
             'chars' => $chars,
+            'prize' => $gainexp,
         ];
         return $obtained;
     }

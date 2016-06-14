@@ -13,15 +13,21 @@ class UserModel extends DynamoDBHandler
     private $user;
     private $user_id;
     private $is_read;
-    public function __construct()
+    public function __construct($user_id)
     {
         parent::__construct();
 
-        $this->user_id = 1;               #セッションから取得する
+        $this->user_id = $user_id;               #セッションから取得する
         $this->user = [];
         $this->is_read = 0;
 
     }
+
+
+    /**
+     * セッションからユーザーIDを取得する
+     */
+
 
     /**
     * ユーザーIDに紐付いている情報を取得する関数

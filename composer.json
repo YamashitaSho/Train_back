@@ -20,6 +20,7 @@
     "autoload": {
         "classmap": [
             "database",
+            "app/Http",
             "app/Models",
             "app/Services",
             "app/Services/Common"

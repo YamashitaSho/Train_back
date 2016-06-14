@@ -7,9 +7,9 @@ use App\Models\ResultModel;
 
 class Resultlogic extends Model
 {
-    public function __construct()
+    public function __construct($user_id)
     {
-        $this->userinfo = new UserModel();
+        $this->userinfo = new UserModel($user_id);
         $this->result = new ResultModel();
     }
     /**
@@ -25,11 +25,21 @@ class Resultlogic extends Model
         # バトル情報の取得
         $battle = $this->result->getBattleData($user);
 
-        #
+        $response = [];
         # レスポンスの取得
-        $response = makeResponse($battle);
-
-        return [$response, 201];
+        switch ($battle['progress']){
+            case ('created'):
+                $response = ["battle did not run", 400];
+                break;
+            case ('in_process'):
+                $res = $this->caseInProcess($user, $battle);
+                $response = [$this->makeResponse($user, $battle), 201];
+                break;
+            case ('closed'):
+                $response = [$this->makeResponse($user, $battle), 201];
+                break;
+        }
+        return $response;
     }
 
 
@@ -37,43 +47,36 @@ class Resultlogic extends Model
      * [Method] バトルがin_processだった時の処理
      * 戦果書き込み → 結果返信
      */
-    private function caseInProcess(){
-        $data['progress'] = 'closed';               #ステータスを終了済みにする
-        $data['record'] = $this->record->updateRecordStatus($data['record']);
-        #キャラデータ更新
-        $chars_num = count($data['obtained']['chars']);
-        for ($i = 0; $i < $chars_num ; $i++){
-            try {
-                $result = $this->dynamodb->getItem([
-                    'TableName' => 'a_chars',
-                    'Key' => $this->marshaler->marshalItem([
-                        'user_id' => (int)$user_id,
-                        'char_id' => (int)$data['obtained']['chars'][$i]['char_id']
-                    ]),
-                ]);
-            } catch (DynamoDbException $e) {
-                echo $e->getMessage();
-                return ['status: Failed to get Chardata', 500];
-            }
-            $char = $data['obtained']['chars'][$i];
-            $char['user_id'] = $user_id;
-            $char['record'] = $this->record->updateRecordStatus($this->marshaler->unmarshalItem($result['Item'])['record']);
+    private function caseInProcess($user, $battle)
+    {
+        //更新するバトル情報の更新
+        $battle['progress'] = 'closed';
+        //更新するキャラ情報の取得
+        $party = $this->mergeCharsStatus($user, $battle);
+        //トランザクションで更新
+        $this->result->putBattleResult($user, $party, $battle);
+    }
 
-            try{
-                $result = $this->dynamodb->putItem([
-                    'TableName' => 'a_chars',
-                    'Key' => $this->marshaler->marshalItem([
-                        'user_id' => (int)$user_id,
-                        'char_id' => (int)$char['char_id']
-                    ]),
-                    'Item' => $this->marshaler->marshalItem($char)
-                ]);
-            } catch (DynamoDbException $e) {
-                echo $e->getMessage();
-                return ['status: Failed to update Chardata', 500];
-            }
-            $this->dynamodbhandler->putItem($,$);
+
+    /**
+     * [Method] バトルで変更されたキャラ情報を統合する
+     * @return chars
+     */
+    private function mergeCharsStatus ($user, $battle)
+    {
+        $merged_chars = [];
+        $obtain_chars = [];
+        // 変更前のキャラステータス
+        $party = $this->result->getBattleChar($user['user_id'], $battle['obtained']['chars']);
+
+        //インデックスをchar_idに変更
+        foreach($battle['obtained']['chars'] as $obtained_char){
+            $obtain_chars[$obtained_char['char_id']] = $obtained_char;
         }
+        foreach($party as $key => $char){
+            $merged_chars[$key] = $obtain_chars[$char['char_id']] + $char;
+        }
+        return $merged_chars;
     }
 
 
@@ -82,27 +85,36 @@ class Resultlogic extends Model
      * 結果返信のみ
      */
     private function caseClosed(){
-
+        printf("");
     }
 
     /**
      * [Method] レスポンス生成の処理
      */
-    private function makeResponse(){
-        switch ($battle['progress']){
-            case ('in_process'):
-                break;
-            case ('closed'):
-                break;
-
-        }
+    private function makeResponse($user, $data)
+    {
         $response = [
             "is_win" => $data['is_win'],
             "get_item" => "",
             "money" => $user['money'],
-            "prize" => 150,
+            "prize" => $data['obtained']['prize'],
             "chars" => $data['friend_position'],
             "obtained" => $data['obtained']['chars'],
         ];
+
+        return $response;
+    }
+
+
+    /**
+     * [Method] 報酬金額の設定
+     */
+    private function setPrize($data)
+    {
+        $response = 0;
+        if ($data['type'] == 'quest'){
+            $response = $data['obtained']['gainexp'];
+        }
+        return $response;
     }
 }
