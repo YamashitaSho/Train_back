@@ -167,5 +167,785 @@
     "agility": 0,
     "debuf": 0
   }
+},
+{
+  "enemy_id": 13,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 14,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 15,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 16,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 17,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 18,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 19,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 20,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 21,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 22,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 23,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 24,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 25,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 26,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 27,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 28,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 29,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 30,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 31,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 32,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 33,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 34,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 35,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 36,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 37,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 38,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 39,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 40,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 41,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 42,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 43,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 44,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 45,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 46,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 47,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 48,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 49,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 50,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 51,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 52,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 53,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 54,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 55,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 56,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 57,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 58,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 59,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 60,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 61,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 62,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 63,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 64,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 65,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 66,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 67,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 68,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 69,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 70,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 71,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
+},
+{
+  "enemy_id": 72,
+  "char_id": 12,
+  "level": 0,
+  "exp": 120,
+  "name": "テスト12",
+  "status": {
+    "attack": 120,
+    "endurance": 0,
+    "agility": 0,
+    "debuf": 0
+  }
 }
 ]
