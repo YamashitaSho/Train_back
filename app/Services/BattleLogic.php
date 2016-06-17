@@ -138,7 +138,7 @@ class BattleLogic extends Model
         #バトルの進行データを初期データに追加
         $battle['log'] = $battle_log;
         #バトルの勝敗を取得
-        $battle['is_win'] = $this->getIsVictory($battle);
+        $battle['is_win'] = $this->isVictory($battle);
         #バトル結果のステータス変化を追加
         $battle['obtained'] = $this->setObtained($battle);
 
@@ -267,7 +267,7 @@ class BattleLogic extends Model
     * 勝敗を取得する
     * 味方が勝っていればtrue 敵が勝っていればfalse
     */
-    private function getIsVictory($battle)
+    private function isVictory($battle)
     {
         $turn_num = count($battle['log']);
         $last_turn = $battle['log'][$turn_num - 1];
