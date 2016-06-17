@@ -11,23 +11,20 @@ class Order extends Controller
 {
 
 
-    public function __construct(Request $request)
+    public function index(Request $request)
     {
         $user_id = $request->session()->get('user_id');
-        $this->service = new OrderLogic($user_id);
-    }
-
-
-    public function index()
-    {
-        $result = $this->service->getOrder();
+        $service = new OrderLogic($user_id);
+        $result = $service->getOrder();
         return \Response::json($result[0],$result[1]);
     }
 
 
-    public function update($type)
+    public function update(Request $request, $type)
     {
-        $result = $this->service->changeOrder($type);
+        $user_id = $request->session()->get('user_id');
+        $service = new OrderLogic($user_id);
+        $result = $service->changeOrder($type);
         return \Response::json($result[0],$result[1]);
     }
 }

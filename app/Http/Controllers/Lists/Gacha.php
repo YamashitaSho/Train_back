@@ -11,23 +11,20 @@ class Gacha extends Controller
 {
 
 
-    public function __construct(Request $request)
+    public function index(Request $request)
     {
         $user_id = $request->session()->get('user_id');
-        $this->service = new GachaLogic($user_id);
-    }
-
-
-    public function index()
-    {
-        $result = $this->service->checkGacha();
+        $service = new GachaLogic($user_id);
+        $result = $service->checkGacha();
         return \Response::json($result[0],$result[1]);
     }
 
 
-    public function store()
+    public function store(Request $request)
     {
-        $result = $this->service->drawGacha();
+        $user_id = $request->session()->get('user_id');
+        $service = new GachaLogic($user_id);
+        $result = $service->drawGacha();
         return \Response::json($result[0],$result[1]);
     }
 }
