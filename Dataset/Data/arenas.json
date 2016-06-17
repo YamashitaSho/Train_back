@@ -1,6 +1,6 @@
 [
 {
-  "arena_id" : 1,
+  "arena_id" : 0,
   "entry_fee": {
     "first": 100,
     "later": 300
@@ -15,7 +15,7 @@
     }
   }
 },{
-  "arena_id" : 2,
+  "arena_id" : 1,
   "entry_fee": {
     "first": 100,
     "later": 300
@@ -30,7 +30,7 @@
     }
   }
 },{
-  "arena_id" : 3,
+  "arena_id" : 2,
   "entry_fee": {
     "first": 100,
     "later": 300
@@ -45,7 +45,7 @@
     }
   }
 },{
-  "arena_id" : 4,
+  "arena_id" : 3,
   "entry_fee": {
     "first": 100,
     "later": 300
@@ -60,7 +60,7 @@
     }
   }
 },{
-  "arena_id" : 5,
+  "arena_id" : 4,
   "entry_fee": {
     "first": 100,
     "later": 300
@@ -75,7 +75,7 @@
     }
   }
 },{
-  "arena_id" : 6,
+  "arena_id" : 5,
   "entry_fee": {
     "first": 100,
     "later": 300
@@ -90,7 +90,7 @@
     }
   }
 },{
-  "arena_id" : 7,
+  "arena_id" : 6,
   "entry_fee": {
     "first": 100,
     "later": 300
