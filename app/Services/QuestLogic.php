@@ -43,8 +43,6 @@ class QuestLogic extends Model
         if ($this->canMakeBattle($user)){       #バトル作成可能条件の確認
             #バトルIDを一つ進める
             $user['battle_id'] ++;
-            #仮enemyparty_id()
-
             $enemyparty = $this->getQuestEnemy();
             $enemy_position = $this->quest->readEnemy($enemyparty['party']);
             $friend_position = $this->quest->readCharInParty($user);
@@ -53,7 +51,7 @@ class QuestLogic extends Model
             $this->quest->writeUser($user);
         }
         $response = [
-                'battle_id' => $user['battle_id']
+            'battle_id' => $user['battle_id']
         ];
         return [$response, 201];
     }
@@ -81,10 +79,8 @@ class QuestLogic extends Model
      */
     private function getQuestEnemy()
     {
-
         $enemyparties = $this->getEnemyParties();
         $enemyparty = $this->chooseEnemyParty($enemyparties);
-
         return $enemyparty;
     }
 
