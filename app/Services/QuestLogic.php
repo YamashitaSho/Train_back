@@ -12,7 +12,8 @@ use App\Models\UserModel;
  */
 class QuestLogic extends Model
 {
-    public function __construct($user_id){
+    public function __construct($user_id)
+    {
         $this->quest = new QuestModel();
         $this->userinfo = new UserModel($user_id);
     }

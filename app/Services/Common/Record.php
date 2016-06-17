@@ -1,7 +1,6 @@
 <?php
 namespace App\Services\Common;
 
-require '../vendor/autoload.php';
 use Illuminate\Database\Eloquent\Model;
 
 class Record extends Model

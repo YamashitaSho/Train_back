@@ -18,7 +18,7 @@ class Resultlogic extends Model
     * DB上のバトルデータから結果情報を取得し、ステータスに反映後、返す。
     */
 
-    public function getResult($battle_id)
+    public function getResult()
     {
         # ユーザー情報の取得
         $user = $this->userinfo->getUser();

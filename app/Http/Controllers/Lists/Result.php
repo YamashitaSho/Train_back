@@ -15,7 +15,7 @@ class Result extends Controller
     {
         $user_id = $request->session()->get('user_id');
         $service = new ResultLogic($user_id);
-        $result = $service->getResult($battle_id);
+        $result = $service->getResult();
         return \Response::json($result[0],$result[1]);
     }
 }

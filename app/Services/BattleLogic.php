@@ -26,7 +26,7 @@ class BattleLogic extends Model
     * 該当バトルのステータスを確認し、createdでなければ進行しない。
     * @return $response : [ (array or string), STATUS_CODE ]
     */
-    public function setBattle($battle_id = 0)
+    public function setBattle()
     {
         #ユーザー情報の取得
         $user = $this->userinfo->getUser();
@@ -77,7 +77,7 @@ class BattleLogic extends Model
     * userに紐付いているバトルについて、戦闘ログとして記録されているデータを返す。
     * ステータスがin_processでなかった場合はエラーを返す。
     */
-    public function turnoverBattle($battle_id)
+    public function turnoverBattle()
     {
         $user = $this->userinfo->getUser();
         $battle = $this->battle->getBattle($user);
