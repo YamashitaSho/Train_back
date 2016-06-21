@@ -311,7 +311,7 @@ class BattleLogic extends Model
         $gainexp = 0;
         $exp_win = $is_win ? 1 : (1/4);
         foreach ($enemy_position as $a_enemy){
-            $gainexp += $a_enemy['exp'] * $exp_win;
+            $gainexp += floor($a_enemy['exp'] * $exp_win);
         }
         return $gainexp;
     }
