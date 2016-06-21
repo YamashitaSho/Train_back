@@ -11,23 +11,20 @@ class Stage extends Controller
 {
 
 
-    public function __construct(Request $request)
+    public function index(Request $request)
     {
         $user_id = $request->session()->get('user_id');
-        $this->service = new StageLogic($user_id);
-    }
-
-
-    public function index()
-    {
-        $result = $this->service>getBattlelist();
+        $service = new StageLogic($user_id);
+        $result = $service->getBattlelist();
         return \Response::json($result[0],$result[1]);
     }
 
 
-    public function store()
+    public function store(Request $request)
     {
-        $result = $this->service->joinBattle();
+        $user_id = $request->session()->get('user_id');
+        $service = new StageLogic($user_id);
+        $result = $service->joinBattle();
         return \Response::json($result[0],$result[1]);
     }
 }

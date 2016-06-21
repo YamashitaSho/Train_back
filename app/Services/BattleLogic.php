@@ -26,7 +26,7 @@ class BattleLogic extends Model
     * 該当バトルのステータスを確認し、createdでなければ進行しない。
     * @return $response : [ (array or string), STATUS_CODE ]
     */
-    public function setBattle($battle_id = 0)
+    public function setBattle()
     {
         #ユーザー情報の取得
         $user = $this->userinfo->getUser();
@@ -77,7 +77,7 @@ class BattleLogic extends Model
     * userに紐付いているバトルについて、戦闘ログとして記録されているデータを返す。
     * ステータスがin_processでなかった場合はエラーを返す。
     */
-    public function turnoverBattle($battle_id)
+    public function turnoverBattle()
     {
         $user = $this->userinfo->getUser();
         $battle = $this->battle->getBattle($user);
@@ -138,7 +138,7 @@ class BattleLogic extends Model
         #バトルの進行データを初期データに追加
         $battle['log'] = $battle_log;
         #バトルの勝敗を取得
-        $battle['is_win'] = $this->getIsVictory($battle);
+        $battle['is_win'] = $this->isVictory($battle);
         #バトル結果のステータス変化を追加
         $battle['obtained'] = $this->setObtained($battle);
 
@@ -267,7 +267,7 @@ class BattleLogic extends Model
     * 勝敗を取得する
     * 味方が勝っていればtrue 敵が勝っていればfalse
     */
-    private function getIsVictory($battle)
+    private function isVictory($battle)
     {
         $turn_num = count($battle['log']);
         $last_turn = $battle['log'][$turn_num - 1];
@@ -311,7 +311,7 @@ class BattleLogic extends Model
         $gainexp = 0;
         $exp_win = $is_win ? 1 : (1/4);
         foreach ($enemy_position as $a_enemy){
-            $gainexp += $a_enemy['exp'] * $exp_win;
+            $gainexp += floor($a_enemy['exp'] * $exp_win);
         }
         return $gainexp;
     }

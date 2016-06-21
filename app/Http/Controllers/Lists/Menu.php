@@ -11,16 +11,11 @@ class Menu extends Controller
 {
 
 
-    public function __construct(Request $request)
+    public function index(Request $request)
     {
         $user_id = $request->session()->get('user_id');
-        $this->service = new MenuLogic($user_id);
-    }
-
-
-    public function index()
-    {
-        $result = $this->service->getMenu();
+        $service = new MenuLogic($user_id);
+        $result = $service->getMenu();
         return \Response::json($result[0],$result[1]);
     }
 }

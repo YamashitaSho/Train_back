@@ -23,18 +23,17 @@
 
 
 Route::group(['middleware' => ['web']], function () {
+    Route::get('v1/auth/google', 'Auth\AuthController@redirectToProvider');
+    Route::get('v1/auth/google/{id}', 'Auth\AuthController@handleProviderCallback');
 
-    Route::group(['middleware' => ['auth']], function () {
-        Route::resource('v1/quest', 'Lists\Quest', ['only' => ['index', 'store']]);
-        Route::resource('v1/stage', 'Lists\Stage', ['only' => ['index', 'store']]);
-        Route::resource('v1/battle', 'Lists\Battle', ['only' => ['show', 'update']]);
-        Route::resource('v1/battle/result', 'Lists\Result', ['only' => ['update']]);
-        Route::resource('v1/gacha', 'Lists\Gacha', ['only' => ['index', 'store']]);
-        Route::resource('v1/menu', 'Lists\Menu', ['only' => ['index']]);
-        Route::resource('v1/order', 'Lists\Order', ['only' => ['index', 'update']]);
-    });
+});
 
-
-Route::get('v1/auth/google', 'Auth\AuthController@redirectToProvider');
-Route::get('v1/auth/google/{id}', 'Auth\AuthController@handleProviderCallback');
+Route::group(['middleware' => ['web','auth']], function () {
+    Route::resource('v1/quest', 'Lists\Quest', ['only' => ['index', 'store']]);
+    Route::resource('v1/stage', 'Lists\Stage', ['only' => ['index', 'store']]);
+    Route::resource('v1/battle', 'Lists\Battle', ['only' => ['show', 'update']]);
+    Route::resource('v1/battle/result', 'Lists\Result', ['only' => ['update']]);
+    Route::resource('v1/gacha', 'Lists\Gacha', ['only' => ['index', 'store']]);
+    Route::resource('v1/menu', 'Lists\Menu', ['only' => ['index']]);
+    Route::resource('v1/order', 'Lists\Order', ['only' => ['index', 'update']]);
 });

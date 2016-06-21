@@ -4,6 +4,7 @@ namespace App\Services;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\UserModel;
 use App\Models\GachaModel;
+use App\Models\CharLoader;
 
 class GachaLogic extends Model
 {
@@ -25,6 +26,7 @@ class GachaLogic extends Model
     {
         $this->gacha = new GachaModel();
         $this->usermodel = new UserModel($user_id);
+        $this->charloader = new CharLoader();
     }
 
     /**
@@ -119,7 +121,7 @@ class GachaLogic extends Model
     private function makeGachaBox($user_id)
     {
         #全キャラの重み配列
-        $gachabox = $this->gacha->readWeight();
+        $gachabox = $this->charloader->getWeights();
         #手持ちキャラのリスト
         $own_chars = $this->gacha->readChar($user_id);
         foreach ($own_chars as $own_char){
@@ -183,7 +185,7 @@ class GachaLogic extends Model
             $gacha_rand -= $gachabox[$i];
         }
 
-        $prize_char = $this->gacha->readPrize($prize_id);
+        $prize_char = $this->charloader->getChar($prize_id);
         return $prize_char;
     }
 

@@ -1,219 +1,108 @@
 [
 {
+  "arena_id" : 0,
+  "entry_fee": {
+    "first": 100,
+    "later": 300
+  },
+  "arena" :{
+    "enemyparty_id": [10,11,12],
+    "name": "テスト1",
+    "text": "テストテキスト",
+    "prize": {
+      "money": 100,
+      "item_id": 0
+    }
+  }
+},{
   "arena_id" : 1,
-  "arena" :[ {
-    "enemyparty_id": 1,
-    "name": "テスト1",
-    "text": "テストテストテストテスト",
-    "prize": {
-      "money": 100,
-      "item_id": 0
-    }
+  "entry_fee": {
+    "first": 100,
+    "later": 300
   },
-  {
-    "enemyparty_id": 0,
-    "name": "テスト1",
-    "text": "テストテストテストテスト",
-    "prize": {
-      "money": 100,
-      "item_id": 0
-    }
-  },
-  {
-    "enemyparty_id": 0,
-    "name": "テスト1",
-    "text": "テストテストテストテスト",
-    "prize": {
-      "money": 100,
-      "item_id": 0
-    }
-  }
-  ]
-},
-{
-  "arena_id" : 2,
-  "arena" :[ {
-    "enemyparty_id": 2,
+  "arena" :{
+    "enemyparty_id": [13,14,15],
     "name": "テスト2",
-    "text": "テストテストテストテスト",
-    "prize": {
-      "money": 100,
-      "item_id": 0
-    }
-  },
-  {
-    "enemyparty_id": 0,
-    "name": "テスト1",
-    "text": "テストテストテストテスト",
-    "prize": {
-      "money": 100,
-      "item_id": 0
-    }
-  },
-  {
-    "enemyparty_id": 0,
-    "name": "テスト1",
-    "text": "テストテストテストテスト",
+    "text": "テストテキスト",
     "prize": {
       "money": 100,
       "item_id": 0
     }
   }
-  ]
-},
-{
-  "arena_id" : 3,
-  "arena" :[ {
-    "enemyparty_id": 3,
+},{
+  "arena_id" : 2,
+  "entry_fee": {
+    "first": 100,
+    "later": 300
+  },
+  "arena" :{
+    "enemyparty_id": [16,17,18],
     "name": "テスト3",
-    "text": "テストテストテストテスト",
-    "prize": {
-      "money": 100,
-      "item_id": 0
-    }
-  },
-  {
-    "enemyparty_id": 0,
-    "name": "テスト1",
-    "text": "テストテストテストテスト",
-    "prize": {
-      "money": 100,
-      "item_id": 0
-    }
-  },
-  {
-    "enemyparty_id": 0,
-    "name": "テスト1",
-    "text": "テストテストテストテスト",
+    "text": "テストテキスト",
     "prize": {
       "money": 100,
       "item_id": 0
     }
   }
-  ]
-},
-{
-  "arena_id" : 4,
-  "arena" :[ {
-    "enemyparty_id": 4,
+},{
+  "arena_id" : 3,
+  "entry_fee": {
+    "first": 100,
+    "later": 300
+  },
+  "arena" :{
+    "enemyparty_id": [19,20,21],
     "name": "テスト4",
-    "text": "テストテストテストテスト",
-    "prize": {
-      "money": 100,
-      "item_id": 0
-    }
-  },
-  {
-    "enemyparty_id": 4,
-    "name": "テスト1",
-    "text": "テストテストテストテスト",
-    "prize": {
-      "money": 100,
-      "item_id": 0
-    }
-  },
-  {
-    "enemyparty_id": 0,
-    "name": "テスト1",
-    "text": "テストテストテストテスト",
+    "text": "テストテキスト",
     "prize": {
       "money": 100,
       "item_id": 0
     }
   }
-  ]
-},
-{
-  "arena_id" : 5,
-  "arena" :[ {
-    "enemyparty_id": 5,
+},{
+  "arena_id" : 4,
+  "entry_fee": {
+    "first": 100,
+    "later": 300
+  },
+  "arena" :{
+    "enemyparty_id": [22,23,24],
     "name": "テスト5",
-    "text": "テストテストテストテスト",
-    "prize": {
-      "money": 100,
-      "item_id": 0
-    }
-  },
-  {
-    "enemyparty_id": 0,
-    "name": "テスト1",
-    "text": "テストテストテストテスト",
-    "prize": {
-      "money": 100,
-      "item_id": 0
-    }
-  },
-  {
-    "enemyparty_id": 0,
-    "name": "テスト1",
-    "text": "テストテストテストテスト",
+    "text": "テストテキスト",
     "prize": {
       "money": 100,
       "item_id": 0
     }
   }
-  ]
-},
-{
-  "arena_id" : 6,
-  "arena" :[ {
-    "enemyparty_id": 6,
+},{
+  "arena_id" : 5,
+  "entry_fee": {
+    "first": 100,
+    "later": 300
+  },
+  "arena" :{
+    "enemyparty_id": [25,26,27],
     "name": "テスト6",
-    "text": "テストテストテストテスト",
-    "prize": {
-      "money": 100,
-      "item_id": 0
-    }
-  },
-  {
-    "enemyparty_id": 0,
-    "name": "テスト1",
-    "text": "テストテストテストテスト",
-    "prize": {
-      "money": 100,
-      "item_id": 0
-    }
-  },
-  {
-    "enemyparty_id": 0,
-    "name": "テスト1",
-    "text": "テストテストテストテスト",
+    "text": "テストテキスト",
     "prize": {
       "money": 100,
       "item_id": 0
     }
   }
-  ]
-},
-{
-  "arena_id" : 7,
-  "arena" :[ {
-    "enemyparty_id": 7,
+},{
+  "arena_id" : 6,
+  "entry_fee": {
+    "first": 100,
+    "later": 300
+  },
+  "arena" :{
+    "enemyparty_id": [28,29,30],
     "name": "テスト7",
-    "text": "テストテストテストテスト",
-    "prize": {
-      "money": 100,
-      "item_id": 0
-    }
-  },
-  {
-    "enemyparty_id": 0,
-    "name": "テスト1",
-    "text": "テストテストテストテスト",
-    "prize": {
-      "money": 100,
-      "item_id": 0
-    }
-  },
-  {
-    "enemyparty_id": 0,
-    "name": "テスト1",
-    "text": "テストテストテストテスト",
+    "text": "テストテキスト",
     "prize": {
       "money": 100,
       "item_id": 0
     }
   }
-  ]
 }
 ]

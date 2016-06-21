@@ -41,25 +41,6 @@ class GachaModel extends DynamoDBHandler
 
 
     /**
-     * [関数] 重み情報を読み込む
-     * @var $weights : 要素名[char_id] = [weight]
-     */
-    public function readWeight ()
-    {
-        $scan = [
-            'TableName' => 'chars',
-            'ProjectionExpression' => 'char_id, weight'
-        ];
-        $chars = $this->scan($scan, 'Failed to Get CharData');
-        $weights = [];                         # $weights[$char_id] = weight;
-        foreach ($chars as $char) {
-            $weights[$char['char_id']] = $char['weight'];
-        }
-        return $weights;
-    }
-
-
-    /**
     * [関数] 指定されたidのキャラを読み込む
     *
     * @param $prize_id : 抽選結果のchar_id

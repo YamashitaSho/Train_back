@@ -11,23 +11,20 @@ class Battle extends Controller
 {
 
 
-    public function __construct(Request $request)
+    public function show(Request $request)
     {
         $user_id = $request->session()->get('user_id');
-        $this->service = new BattleLogic($user_id);
-    }
-
-
-    public function show($battle_id)
-    {
-        $result = $this->service->turnoverBattle($battle_id);
+        $service = new BattleLogic($user_id);
+        $result = $service->turnoverBattle();
         return \Response::json($result[0],$result[1]);
     }
 
 
-    public function update($battle_id)
+    public function update(Request $request)
     {
-        $result = $this->service->setBattle($battle_id);
+        $user_id = $request->session()->get('user_id');
+        $service = new BattleLogic($user_id);
+        $result = $service->setBattle();
         return \Response::json($result[0],$result[1]);
     }
 }

@@ -18,7 +18,7 @@ class Resultlogic extends Model
     * DB上のバトルデータから結果情報を取得し、ステータスに反映後、返す。
     */
 
-    public function getResult($battle_id)
+    public function getResult()
     {
         # ユーザー情報の取得
         $user = $this->userinfo->getUser();
@@ -55,6 +55,20 @@ class Resultlogic extends Model
         $party = $this->mergeCharsStatus($user, $battle);
         //トランザクションで更新
         $this->result->putBattleResult($user, $party, $battle);
+        switch ($battle['type']){
+            case ('quest'):
+                //クエストは1戦で終了
+                break;
+            case ('arena0'):
+                //arena1のバトルを発行
+                break;
+            case ('arena1'):
+                //arena2のバトルを発行
+                break;
+            case ('arena2'):
+                //最後のバトルなのでアリーナをクリアした処理として終了
+                break;
+        }
     }
 
 
@@ -100,6 +114,7 @@ class Resultlogic extends Model
             "prize" => $data['obtained']['prize'],
             "chars" => $data['friend_position'],
             "obtained" => $data['obtained']['chars'],
+            "type" => $data['type']
         ];
 
         return $response;

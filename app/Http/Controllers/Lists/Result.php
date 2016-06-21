@@ -11,16 +11,11 @@ class Result extends Controller
 {
 
 
-    public function __construct(Request $request)
+    public function update(Request $request)
     {
         $user_id = $request->session()->get('user_id');
-        $this->service = new ResultLogic($user_id);
-    }
-
-
-    public function update($battle_id)
-    {
-        $result = $this->service->getResult($battle_id);
+        $service = new ResultLogic($user_id);
+        $result = $service->getResult();
         return \Response::json($result[0],$result[1]);
     }
 }

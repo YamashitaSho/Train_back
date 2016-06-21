@@ -56,6 +56,53 @@ class StageModel extends DynamoDBHandler
         return $result['a_chars'];
     }
 
+
+    /**
+     * [Method] JOINするアリーナ情報を読み込む
+     */
+    public function getArena($arena_id)
+    {
+        $key = [
+            'arena_id' => [
+                'N' => (string)$arena_id
+            ]
+        ];
+        $get = [
+            'TableName' => 'arenas',
+            'Key' => $key
+        ];
+        $result = $this->getItem($get);
+        return $result;
+    }
+
+
+
+    /**
+     * [Method] アリーナ情報リストを読み込む
+     */
+    public function getArenas($index)
+    {
+        $key = [];
+        foreach ($index as $id){
+            $key[] = [
+                'arena_id' => [
+                    'N' => (string)$id
+                ]
+            ];
+        }
+
+        $get = [
+            'RequestItems' => [
+                'arenas' => [
+                    'Keys' => $key,
+                    'ProjectionExpression' => 'arena, entry_fee'
+                ]
+            ]
+        ];
+        $result = $this->batchGetItem($get);
+        return $result['arenas'];
+    }
+
     /**
      * [Method] バトル情報を読み込む
      * @param $user ユーザー情報
@@ -75,7 +122,7 @@ class StageModel extends DynamoDBHandler
             'Key' => $key,
             'ProjectionExpression' => 'progress'
         ];
-        $result = $this->getItem($get, 'Failed to Read Battlelog');
+        $result = $this->getItem($get);
         return $result;
     }
 
@@ -134,43 +181,14 @@ class StageModel extends DynamoDBHandler
 
 
     /**
-    * [Method] 味方キャラデータを読み込む
-    */
-    public function readCharInParty($user)
-    {
-        $key = [];
-        foreach ($user['party'] as $char){
-            $key[] = [
-                'user_id' => [
-                    'N' => (string)$user['user_id']
-                ],
-                'char_id' => [
-                    'N' => (string)$char['char_id']
-                ]
-            ];
-        }
-        $get = [
-            'RequestItems' => [
-                'a_chars' => [
-                    'Keys' => $key,
-                    'ProjectionExpression' => 'char_id, exp, #lv, #st, #nm',
-                    'ExpressionAttributeNames' => [
-                        '#lv' => 'level',
-                        '#st' => 'status',
-                        '#nm' => 'name'
-                    ]
-                ]
-            ]
-        ];
-        $enemies = $this->batchGetItem($get, 'Failed to Read Chardata');
-        return $enemies['a_chars'];
-    }
-
-
-    /**
     * [Method] バトルテーブルへバトルの初期状態を書き込む
+    * @param $user array
+    * @param $friends array
+    * @param $enemies array
+    * @param $arena array
+    * @param $type string
     */
-    public function writeBattle($user, $friends, $enemies)
+    public function putBattle($user, $friends, $enemies, $arena, $type)
     {
         $item = [
             "user_id" => $user['user_id'],
@@ -179,7 +197,8 @@ class StageModel extends DynamoDBHandler
             "friend_position" => $friends,
             "enemy_position" => $enemies,
             "record" => $this->record->makeRecordStatus(),
-            "type" => "quest",
+            "type" => $type,
+            "arena" => $arena
         ];
         $key = [
             'user_id' => $user['user_id'],
@@ -190,15 +209,14 @@ class StageModel extends DynamoDBHandler
             'Key' => $this->marshaler->marshalItem($key),
             'Item' => $this->marshaler->marshalItem($item),
         ];
-        $result = $this->putItem($put, 'Failed to Write BattleData');
-        return $result;
+        return $this->putItem($put, 'Failed to Write BattleData');
     }
 
 
     /**
     * [Method] ユーザーテーブルへバトル情報を書き込む
     */
-    public function writeUser($user)
+    public function updateUser($user)
     {
         $user['record'] = $this->record->updateRecordStatus($user['record']);
         $item = $user;
@@ -213,5 +231,19 @@ class StageModel extends DynamoDBHandler
         $result = $this->putItem($put, 'Failed to Write UserData');
 
         return $result;
+    }
+
+    /**
+     * バトル情報を書き込むトランザクションを実行
+     */
+    public function transBattle($user, $friends, $enemies, $arena, $type)
+    {
+        #トランザクション用のレコード
+        $record = $this->record->makeRecordStatus();
+        #バトルレコードの更新内容
+        $a_battle = $this->putBattle($user, $friends, $enemies, $arena, $type);
+        #ユーザーレコードの更新内容
+        $a_user = $this->updateUser($user);
+        $this->trans->isTransSuccess($user, $record, [$a_battle, $a_user]);
     }
 }
