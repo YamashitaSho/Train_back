@@ -184,7 +184,7 @@ class StageModel extends DynamoDBHandler
     * [Method] バトルテーブルへバトルの初期状態を書き込む
     * @param $user array
     * @param $friends array
-    * @param $friends array
+    * @param $enemies array
     * @param $arena array
     * @param $type string
     */
@@ -238,9 +238,12 @@ class StageModel extends DynamoDBHandler
      */
     public function transBattle($user, $friends, $enemies, $arena, $type)
     {
+        #トランザクション用のレコード
         $record = $this->record->makeRecordStatus();
+        #バトルレコードの更新内容
         $a_battle = $this->putBattle($user, $friends, $enemies, $arena, $type);
+        #ユーザーレコードの更新内容
         $a_user = $this->updateUser($user);
-        $this->trans->isTransSuccess();
+        $this->trans->isTransSuccess($user, $record, [$a_battle, $a_user]);
     }
 }
