@@ -6,7 +6,7 @@ use SplFileObject;
 class EnemyPartyLoader
 {
     #このクラスで扱うファイルパス
-    private $path = "../Dataset/Data/enemyparties.csv";
+    private $path = "../Dataset/enemyparties.csv";
     #敵の情報
     private $enemyparties = [];
 

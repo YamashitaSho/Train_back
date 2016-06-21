@@ -6,9 +6,10 @@ use SplFileObject;
 class CharLoader
 {
     #このクラスで扱うファイルパス
-    private $path = "../Dataset/Data/chars.csv";
+    private $path = "../Dataset/chars.csv";
     #敵の情報
     private $chars = [];
+    private $statuses = [];
 
 
     /**
@@ -76,6 +77,35 @@ class CharLoader
     }
 
 
+    public function importStatus()
+    {
+        if (empty($this->statuses)){
+            $records = $this->getAll();
+            foreach ($records as $key => $line){
+                #インデックスの取得
+                if ($key == 0){
+                    $index = array_flip($line);
+                    continue;
+                }
+                #データ整形
+                $this->statuses[$line[$index['char_id']]] = [
+                    'char_id' => (int)$line[$index['char_id']],
+                    'level' => (int)$line[$index['level']],
+                    'exp' => (int)$line[$index['exp']],
+                    'name' => $line[$index['name']],
+                    'status' => [
+                        'attack' => (int)$line[$index['attack']],
+                        'endurance' => (int)$line[$index['endurance']],
+                        'agility' => (int)$line[$index['agility']],
+                        'debuf' => (int)$line[$index['debuf']],
+                    ],
+                ];
+            }
+        }
+        return $this->statuses;
+    }
+
+
     /**
      * キャラのマスタからガチャの重みの配列を取得し、返す。
      * @return array $weights char_idをキーとする重みの配列
@@ -96,7 +126,7 @@ class CharLoader
      */
     public function getChar($char_id)
     {
-        $chars = $this->importAll();
+        $chars = $this->importStatus();
         return $chars[$char_id];
     }
 }
