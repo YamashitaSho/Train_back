@@ -66,7 +66,7 @@ class Resultlogic extends Model
                 //arena2のバトルを発行
                 break;
             case ('arena2'):
-                //最後のバトルなので終了
+                //最後のバトルなのでアリーナをクリアした処理として終了
                 break;
         }
     }
