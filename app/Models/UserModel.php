@@ -2,6 +2,7 @@
 namespace App\Models;
 
 use App\Models\DynamoDBHandler;
+use App\Services\Common\Record;
 
     /**
     * ユーザー情報に関わるクラス
@@ -20,13 +21,9 @@ class UserModel extends DynamoDBHandler
         $this->user_id = $user_id;               #セッションから取得する
         $this->user = [];
         $this->is_read = 0;
+        $this->record = new Record();
 
     }
-
-
-    /**
-     * セッションからユーザーIDを取得する
-     */
 
 
     /**
@@ -54,5 +51,36 @@ class UserModel extends DynamoDBHandler
         }
 
         return $this->user;
+    }
+
+
+    /**
+     * ユーザー情報の更新
+     * @param array $user 更新後のユーザーデータ
+     */
+    public function updateUser($user)
+    {
+        $put = $this->getQueryUpdateUser($user);
+        $this->putItem($put);
+    }
+
+
+    /**
+     * ユーザー更新情報の作成
+     * @param array $user 更新後のユーザーデータ
+     * @return array $put ユーザーデータを更新する命令
+     */
+    public function getQueryUpdateUser($user)
+    {
+        $user['record'] = $this->record->updateRecordStatus($user['record']);
+        $key = [
+            'user_id' => $user['user_id']
+        ];
+        $put = [
+            'TableName' => 'a_users',
+            'Key' => $this->marshaler->marshalItem($key),
+            'Item' => $this->marshaler->marshalItem($user),
+        ];
+        return $put;
     }
 }
