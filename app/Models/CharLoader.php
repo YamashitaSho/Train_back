@@ -112,8 +112,8 @@ class CharLoader
      */
     public function getWeights()
     {
-        $chars = $this->importAll();
-        foreach($chars as $char){
+        $all_chars = $this->importAll();
+        foreach($all_chars as $char){
             $weights[$char['char_id']] = $char['weight'];
         }
         return $weights;
@@ -122,11 +122,59 @@ class CharLoader
 
     /**
      * 指定されたchar_idのキャラを返す。
+     * @param int $char_id キャラID
      * @return array $char キャラのステータス
      */
     public function getChar($char_id)
     {
-        $chars = $this->importStatus();
-        return $chars[$char_id];
+        $all_chars = $this->importStatus();
+        return $all_chars[$char_id];
+    }
+
+
+    /**
+     * 配列で指定されたchar_idのキャラを返す。
+     * @param array $char_ids キャラIDの配列
+     * @param array $keyword どのようなデータを取得するかの設定名 指定しなければすべてのパラメータを返す
+     * @return array $chars キャラのステータスの配列 [{char_id = 2},{},...]
+     */
+    public function getChars($char_ids, $keyword = 'all')
+    {
+        $index = $this->customIndexs($keyword);
+        $all_chars = $this->importAll();
+        foreach($char_ids as $char_id){
+            if (empty($index)){
+                $chars[] = $all_chars[$char_id['char_id']];
+            } else {
+                $buf = [];
+                foreach($index as $key){
+                    $buf[$key] = $all_chars[$char_id['char_id']][$key];
+                }
+                $chars[] = $buf;
+            }
+        }
+        return $chars;
+    }
+
+
+    /**
+     * 指定されたキーワードから読み込むステータスを返す
+     * @param string $keyword キーワード
+     * @return string $index 読み込むパラメータの要素名
+     */
+    private function customIndexs($keyword)
+    {
+        $index = [];
+        switch($keyword){
+            case ('all'):
+                break;
+            case ('status'):
+                $index = ['char_id', 'level', 'exp', 'name', 'status'];
+                break;
+            case ('max'):
+                $index = ['char_id', 'status_max'];
+                break;
+        }
+        return $index;
     }
 }
