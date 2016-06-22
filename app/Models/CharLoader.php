@@ -140,10 +140,11 @@ class CharLoader
      */
     public function getChars($char_ids, $keyword = 'all')
     {
-        $index = $this->customIndexs($keyword);
+        $index = $this->customIndexes($keyword);
         $all_chars = $this->importAll();
         foreach($char_ids as $char_id){
             if (empty($index)){
+                #インデックスの指定なし
                 $chars[] = $all_chars[$char_id['char_id']];
             } else {
                 $buf = [];
@@ -162,7 +163,7 @@ class CharLoader
      * @param string $keyword キーワード
      * @return string $index 読み込むパラメータの要素名
      */
-    private function customIndexs($keyword)
+    private function customIndexes($keyword)
     {
         $index = [];
         switch($keyword){

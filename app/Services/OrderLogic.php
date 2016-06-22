@@ -5,7 +5,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use App\Models\OrderModel;
 use App\Models\UserModel;
-use App\Models\CharLoader;
 
 class OrderLogic extends Model
 {
@@ -24,7 +23,6 @@ class OrderLogic extends Model
     {
         $this->order = new OrderModel();
         $this->userinfo = new UserModel($user_id);
-        $this->charloader = new CharLoader();
     }
 
 
@@ -40,7 +38,7 @@ class OrderLogic extends Model
         $chars = $this->order->readChar($user['user_id']);
         if (!empty($chars)) {
             #所持キャラのマスタ
-            $chars_master = $this->charloader->getChars($chars, 'max');
+            $chars_master = $this->order->getCharsStatusMax($chars);
             #キャラデータをマスタと統合
             $chars = $this->combineCharData($chars, $chars_master);
         }
@@ -174,7 +172,7 @@ class OrderLogic extends Model
         }
         #隊列入れ替え、書き込み
         $user['party'][$request['slot']][$type] = $request['new_id'];
-        $this->order->updateUser($user);
+        $this->userinfo->updateUser();
 
         return [$request, 201];
     }
@@ -212,7 +210,7 @@ class OrderLogic extends Model
             }
             #隊列入れ替え、書き込み
             $user['party'][$request['slot']][$type] = $request['new_id'];
-            $this->order->updateUser($user);
+            $this->userinfo->updateUser();
         } while (false);
 
         return $response;
