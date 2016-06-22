@@ -53,34 +53,6 @@ class OrderModel extends DynamoDBHandler
 
 
     /**
-    * [関数] 所持しているキャラのマスターデータを読み込む。
-    *
-    * 読み込むデータ: char_id, status_max
-    */
-    public function readCharMaster($chars)
-    {
-        $key = [];
-        foreach ($chars as $char){
-            $key[] = [
-                'char_id' => [
-                    'N' => (string)$char['char_id']
-                ]
-            ];
-        }
-        $get = [
-            'RequestItems' => [
-                'chars' => [
-                    'Keys' => $key,
-                    'ProjectionExpression' => 'char_id, status_max'
-                ]
-            ]
-        ];
-        $chars_master = $this->batchGetItem($get, 'Failed to read CharData(Master)');
-        return $chars_master['chars'];
-    }
-
-
-    /**
     * [関数] アイテムのデータを読み込む
     *
     * 読み込むデータ : item_id, name, text, status

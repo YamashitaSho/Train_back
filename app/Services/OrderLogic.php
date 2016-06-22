@@ -5,6 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use App\Models\OrderModel;
 use App\Models\UserModel;
+use App\Models\CharLoader;
 
 class OrderLogic extends Model
 {
@@ -23,6 +24,7 @@ class OrderLogic extends Model
     {
         $this->order = new OrderModel();
         $this->userinfo = new UserModel($user_id);
+        $this->charloader = new CharLoader();
     }
 
 
@@ -38,7 +40,7 @@ class OrderLogic extends Model
         $chars = $this->order->readChar($user['user_id']);
         if (!empty($chars)) {
             #所持キャラのマスタ
-            $chars_master = $this->order->readCharMaster($chars);
+            $chars_master = $this->charloader->getChars($chars, 'max');
             #キャラデータをマスタと統合
             $chars = $this->combineCharData($chars, $chars_master);
         }
