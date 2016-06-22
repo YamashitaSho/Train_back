@@ -6,6 +6,7 @@ use DateInterval;
 use Aws\DynamoDb\Exception\DynamoDbException;
 use App\Models\DynamoDBHandler;
 use Aws\DynamoDb\Marshaler;
+use App\Services\Record;
 
 class TransactionModel extends DynamoDBHandler
 {
@@ -19,6 +20,7 @@ class TransactionModel extends DynamoDBHandler
     {
         parent::__construct();
         $this->marshaler = new Marshaler();
+        $this->record = new Record();
     }
 
 
@@ -27,20 +29,21 @@ class TransactionModel extends DynamoDBHandler
     *
     * @param  $user : ユーザー情報
     */
-    public function isTransSuccess($user, $record, $requests)
+    public function isTransSuccess($user, $requests)
     {
+        $record = $this->record->makeRecordStatus();
         $is_success = true;
         #キューを作成
         $queue_id = $this->makeQueue($user, $record, $requests);
         #キューを作れなかった
         if ($queue_id == $this->ERROR_QUEUE_UNAVAILABLE){
             $is_success = false;
+        } else {
+            #キューIDをユーザー情報に書き込み
+            $this->updateQueueId($user['user_id'], $queue_id);
+            #キュー情報に従ってトランザクション処理
+            $result = $this->runTransaction($requests, $user['user_id'], $queue_id);
         }
-        #キューIDをユーザー情報に書き込み
-        $this->updateQueueId($user['user_id'], $queue_id);
-        #キュー情報に従ってトランザクション処理
-        $result = $this->runTransaction($requests, $user['user_id'], $queue_id);
-        #成否を代入
 
         return $is_success;
     }
