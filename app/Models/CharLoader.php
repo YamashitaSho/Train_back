@@ -1,9 +1,11 @@
 <?php
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
+
 use SplFileObject;
 
-class CharLoader
+class CharLoader extends Model
 {
     #このクラスで扱うファイルパス
     private $path = "../Dataset/chars.csv";
@@ -159,6 +161,8 @@ class CharLoader
             case ('max'):
                 $index = ['char_id', 'status_max'];
                 break;
+            case ('growth_rate'):
+                $index = ['char_id', 'status_growth_rate'];
         }
         return $index;
     }

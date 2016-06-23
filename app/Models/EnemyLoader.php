@@ -1,9 +1,11 @@
 <?php
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
+
 use SplFileObject;
 
-class EnemyLoader
+class EnemyLoader extends Model
 {
     #このクラスで扱うファイルパス
     private $path = "../Dataset/enemies.csv";

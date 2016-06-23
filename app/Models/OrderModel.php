@@ -1,13 +1,15 @@
 <?php
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
+
 use App\Models\UserModel;
 use App\Models\CharDBModel;
 use App\Models\CharLoader;
 use App\Models\ItemLoader;
 
 
-class OrderModel
+class OrderModel extends Model
 {
     public function __construct($user_id)
     {

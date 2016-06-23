@@ -1,6 +1,8 @@
 <?php
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
+
 use App\Models\TransactionModel;
 use App\Models\UserModel;
 use App\Models\GachaDBModel;
@@ -9,7 +11,7 @@ use App\Models\CharDBModel;
 
 
 
-class GachaModel
+class GachaModel extends Model
 {
     private $user_id;
     public function __construct($user_id)

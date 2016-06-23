@@ -1,18 +1,27 @@
 <?php
 namespace App\Models;
 
-use Aws\DynamoDb\Marshaler;
-use App\Models\DynamoDBHandler;
-use App\Services\Common\Record;
+use Illuminate\Database\Eloquent\Model;
 
-class BattleModel extends DynamoDBHandler
+use App\Models\CharLoader;
+use App\Models\UserModel;
+use App\Models\BattleDBModel;
+
+class BattleModel extends Model
 {
-    public function __construct()
+    private $user_id;
+    public function __construct($user_id)
     {
-        $this->record = new Record();
-        $this->marshaler = new Marshaler();
+        $this->user_id = $user_id;
+        $this->user = new UserModel($user_id);
+        $this->char = new CharLoader();
+        $this->battle = new BattleDBModel();
+    }
 
-        parent::__construct();
+
+    public function getUser()
+    {
+        return $this->user->getUser();
     }
 
 
@@ -22,63 +31,24 @@ class BattleModel extends DynamoDBHandler
     */
     public function getPartyChar($chars)
     {
-        $key = [];
-        foreach ($chars as $char){
-            $key[] = [
-                'char_id' => [
-                    'N' => (string)$char['char_id']
-                ]
-            ];
-        }
-        $get = [
-            'RequestItems' => [
-                'chars' => [
-                    'Keys' => $key,
-                    'ProjectionExpression' => 'char_id, status_growth_rate'
-                ]
-            ]
-        ];
-        $chars_master = $this->batchGetItem($get, 'Failed to read CharData(Master)');
-        return $chars_master['chars'];
+        return $this->char->getChars($chars, 'growth_rate');
     }
 
 
     /**
-    * バトル情報の読み込み
-    */
+     * バトル情報の読み込み
+     */
     public function getBattle($user)
     {
-        $get['TableName'] = 'a_battles';
-        $get['Key'] = [
-            'user_id' => [
-                'N' => (string)$user['user_id']
-            ],
-            'battle_id' => [
-                'N' => (string)$user['battle_id']
-            ]
-        ];
-        $battle = $this->getItem($get, ['Failed to read BattleData']);
-        return $battle;
+        return $this->battle->getBattleByUser($user);
     }
 
 
-    public function writeBattle($user, $battle)
+    /**
+     * バトル情報の書き込み
+     */
+    public function writeBattle($battle)
     {
-        $battle['record'] = $this->record->updateRecordStatus($battle['record']);
-        $key = [
-            'user_id' => [
-                'N' => (string)$user['user_id']
-            ],
-            'battle_id' => [
-                'N' => (string)$user['battle_id']
-            ],
-        ];
-        $put = [
-            'TableName' => 'a_battles',
-            'Key' => $key,
-            'Item' => $this->marshaler->marshalItem($battle),
-        ];
-        $result = $this->putItem($put, ['Failed to write BattleData']);
-        return ;
+        return $this->battle->updateBattle($this->user_id, $battle);
     }
 }

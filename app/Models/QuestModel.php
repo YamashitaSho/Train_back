@@ -1,24 +1,25 @@
 <?php
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
+
 use App\Models\UserModel;
-use App\Models\DynamoDBHandler;
 use App\Models\TransactionModel;
 use App\Models\BattleDBModel;
 use App\Models\CharDBModel;
 use App\Models\EnemyLoader;
 use App\Models\EnemyPartyLoader;
 
+
 /**
  * [Class] クエストに関わるModelクラス
  *
  * 未実装項目 バトル発行はトランザクション処理として行う
  */
-class QuestModel extends DynamoDBHandler
+class QuestModel extends Model
 {
     public function __construct($user_id)
     {
-        parent::__construct();
         $this->trans = new TransactionModel();
         $this->user = new UserModel($user_id);
         $this->battle = new BattleDBModel();

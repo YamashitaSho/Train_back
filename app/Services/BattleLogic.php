@@ -3,7 +3,6 @@ namespace App\Services;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\BattleModel;
-use App\Models\UserModel;
 
 class BattleLogic extends Model
 {
@@ -14,8 +13,7 @@ class BattleLogic extends Model
 
     public function __construct($user_id)
     {
-        $this->battle = new BattleModel();
-        $this->userinfo = new UserModel($user_id);
+        $this->battle = new BattleModel($user_id);
     }
 
 
@@ -29,7 +27,7 @@ class BattleLogic extends Model
     public function setBattle()
     {
         #ユーザー情報の取得
-        $user = $this->userinfo->getUser();
+        $user = $this->battle->getUser();
         #紐付いたバトル情報の取得
         $battle = $this->battle->getBattle($user);
 
@@ -42,7 +40,7 @@ class BattleLogic extends Model
             #バトル進行データを作成
             $battle = $this->battleMain($battle);
             #バトル結果を書き込み
-            $this->battle->writeBattle($user, $battle);
+            $this->battle->writeBattle($battle);
 
         } else if ( $battle['progress'] == 'in_process'){
             #in process: 保存されていたデータを返す
@@ -79,7 +77,7 @@ class BattleLogic extends Model
     */
     public function turnoverBattle()
     {
-        $user = $this->userinfo->getUser();
+        $user = $this->battle->getUser();
         $battle = $this->battle->getBattle($user);
 
         if ($battle['progress'] == 'in_process'){

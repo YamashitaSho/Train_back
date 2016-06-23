@@ -111,6 +111,15 @@ class BattleDBModel extends DynamoDBHandler
 
 
     /**
+     * バトルデータを更新する
+     */
+    public function updateBattle($user_id, $battle)
+    {
+        $update = $this->getQueryUpdateBattle($user_id, $battle);
+        return $this->putItem($update);
+    }
+
+    /**
      * バトルデータ更新情報の作成
      * @param int $user_id ユーザーID
      * @param array $battle 更新するバトル情報
