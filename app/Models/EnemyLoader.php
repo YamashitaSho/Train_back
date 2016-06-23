@@ -73,8 +73,10 @@ class EnemyLoader
     {
         $enemies = $this->importAll();
         foreach($enemy_ids as $enemy_id){
-            $res[] = $this->enemies[$enemy_id];
+            $res[] = $this->enemies[$enemy_id['enemy_id']];
         }
         return $res;
     }
+
+
 }

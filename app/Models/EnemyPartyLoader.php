@@ -48,10 +48,10 @@ class EnemyPartyLoader
                 $this->enemyparties[$line[$index['enemyparty_id']]] = [
                     'enemyparty_id' => $line[$index['enemyparty_id']],
                     'text' => $line[$index['text']],
-                    'enemy_id' => [
-                        $line[$index['enemy_id1']],
-                        $line[$index['enemy_id2']],
-                        $line[$index['enemy_id3']]
+                    'party' => [
+                        ['enemy_id' => $line[$index['enemy_id1']]],
+                        ['enemy_id' => $line[$index['enemy_id2']]],
+                        ['enemy_id' => $line[$index['enemy_id3']]]
                     ],
                     'weight' => $line[$index['weight']]
                 ];
