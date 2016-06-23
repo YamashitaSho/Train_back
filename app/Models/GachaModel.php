@@ -1,69 +1,60 @@
 <?php
 namespace App\Models;
 
-use Aws\DynamoDb\Marshaler;
 use App\Models\TransactionModel;
-use App\Models\DynamoDBHandler;
-use App\Services\Common\Record;
+use App\Models\UserModel;
+use App\Models\GachaDBModel;
+use App\Models\CharLoader;
+use App\Models\CharDBModel;
 
 
-class GachaModel extends DynamoDBHandler
+
+class GachaModel
 {
-    public function __construct()
+    private $user_id;
+    public function __construct($user_id)
     {
-        $this->record = new Record();
-        $this->marshaler = new Marshaler();
+        $this->user_id = $user_id;
+        $this->user = new UserModel($user_id);
         $this->trans = new TransactionModel();
+        $this->gacha = new GachaDBModel();
+        $this->char = new CharLoader();
+        $this->a_char = new CharDBModel();
 
         parent::__construct();
     }
+
+
+    public function getUser()
+    {
+        return $this->user->getUser();
+    }
+
+
     /**
-     * [Method] すでにある重み情報を読み込む
+     * キャラマスタの重み情報を読み込む
      */
-    public function readGachaBox($user_id){
-        $gachabox = [];
-        $get = [
-            'TableName' => 'a_gachas',
-            'Key' => [
-                'user_id' => [
-                    'N' => (string)$user_id
-                ]
-            ]
-        ];
-        $result = $this->getItem($get);
-        if (!empty($result)){
-            foreach ($result['box'] as $char){
-                $gachabox[$char['char_id']] = $char['weight'];
-            }
-        }
-        return $gachabox;
+    public function getWeights()
+    {
+        return $this->char->getWeights();
+    }
+
+
+    /**
+     * 保存された重み情報を読み込む
+     */
+    public function getGachaBox(){
+        return $this->gacha->getGachaBox($this->user_id);
     }
 
 
     /**
     * [関数] 指定されたidのキャラを読み込む
-    *
-    * @param $prize_id : 抽選結果のchar_id
+    * @param int $prize_id 抽選結果のchar_id
     */
-    public function readPrize ($prize_id)
+    public function getChar($char_id)
     {
-        $get = [
-            'TableName' => 'chars',
-            'Key' => [
-                'char_id' => [
-                    'N' => (string)$prize_id
-                ]
-            ],
-            'ProjectionExpression' => 'char_id, #nm, #stat, exp, #lv',
-            'ExpressionAttributeNames' => [
-                '#nm' => 'name',
-                '#stat' => 'status',
-                '#lv' => 'level'
-            ]
-        ];
-        $prize_char = $this->getItem($get, 'Failed to Get CharStatus');
-
-        return $prize_char;
+        return $this->char->getChar($char_id);
     }
 
 
@@ -72,151 +63,23 @@ class GachaModel extends DynamoDBHandler
     *
     * 読み込むのは char_id のみ
     */
-    public function readChar($user_id)
+    public function readChar()
     {
-        $eav = $this->marshaler->marshalJson('
-            {
-                ":user_id": '.$user_id.'
-            }
-        ');
-        $query = [
-            'TableName' => 'a_chars',
-            'KeyConditionExpression' => 'user_id = :user_id',
-            'ProjectionExpression' => 'char_id',
-            'ExpressionAttributeValues' => $eav
-        ];
-        $chars = $this->queryItem($query, 'Failed to Get OwnCharData');
-        return $chars;
+        return $this->a_char->getCharOwned($this->user_id, true);
     }
 
 
     /**
      * [Method] ガチャの重み配列を保存する
      */
-    public function putGachaBox($user_id, $gachabox)
+    public function putGachaBox($gachabox)
     {
-        $record = $this->record->makeRecordStatus();
-        $box = [];
-        $count = 0;
-        foreach ($gachabox as $key => $value){
-            $box[$count]['char_id'] = $key;
-            $box[$count]['weight'] = $value;
-            $count++;
-        }
-        $key = [
-            'user_id' => $user_id,
-        ];
-        $item = [
-            'user_id' => $user_id,
-            'box' => $box,
-            'record' => $record
-        ];
-        $put = [
-            'TableName' => 'a_gachas',
-            'Key' => $this->marshaler->marshalItem($key),
-            'Item' => $this->marshaler->marshalItem($item)
-        ];
-        $result = $this->putItem($put);
-        return ;
+        return $this->gacha->putGachaBox($this->user_id, $gachabox);
     }
 
 
     /**
-    * [関数] 入手キャラデータの整形関数
-    */
-    private function writeChar($user_id, $char, $record)
-    {
-        $key = [
-            'user_id' => $user_id,
-            'char_id' => $char['char_id']
-        ];
-        $item = [
-            'name' => $char['name'],
-            'exp' => $char['exp'],
-            'level' => $char['level'],
-            'status' => $char['status'],
-            'user_id' => $user_id,
-            'char_id' => $char['char_id'],
-            'record' => $record
-        ];
-        $put = [
-            'TableName' => 'a_chars',
-            'Key' => $this->marshaler->marshalItem($key),
-            'Item' => $this->marshaler->marshalItem($item)
-        ];
-        return $put;
-    }
-
-
-    /**
-    * [関数] ユーザーデータ書き込み変数の整形
-    */
-    private function updateUser($user_id, $gacha_cost, $record)
-    {
-        $key = [
-            'user_id' => [
-                'N' => (string)$user_id
-            ]
-        ];
-        $expression_attribute_values = [
-            ':gacha_cost' => [
-                'N' => (string)$gacha_cost
-            ],
-            ':record' => [
-                'S' => (string)$record['update_date']
-            ]
-        ];
-        $update_expression = 'set money = money - :gacha_cost, #rec.update_date = :record';
-
-        $update = [
-            'TableName' => 'a_users',
-            'Key' => $key,
-            'ExpressionAttributeValues' => $expression_attribute_values,
-            'ExpressionAttributeNames' => [
-                '#rec' => 'record'
-            ],
-            'UpdateExpression' => $update_expression
-        ];
-        return $update;
-    }
-
-
-    /**
-     * [Method] ガチャ配列の整形
-     */
-    private function updateGachaBox($user_id, $prize_index, $record)
-    {
-        $key = [
-            'user_id' => [
-                'N' => (string)$user_id
-            ]
-        ];
-
-        $expression_attribute_values = [
-            ':weight' => [
-                'N' => '0'
-            ],
-            ':record' => [
-                'S' => (string)$record['update_date']
-            ]
-        ];
-        $update_expression = 'set box['.$prize_index.'].weight = :weight, #rec.update_date = :record';
-
-        $update = [
-            'TableName' => 'a_gachas',
-            'Key' => $key,
-            'ExpressionAttributeValues' => $expression_attribute_values,
-            'ExpressionAttributeNames' => [
-                '#rec' => 'record'
-            ],
-            'UpdateExpression' => $update_expression
-        ];
-        return $update;
-    }
-
-
-    /**
-     * [Method]
+     * ガチャの結果に従って重み情報を更新する
      */
     private function getPrizeIndex($char_id, $gachabox)
     {
@@ -231,26 +94,31 @@ class GachaModel extends DynamoDBHandler
         return $prize_index;
     }
 
+
     /**
     * [関数] ガチャ結果書き込み関数
-    *
-    * フォーマットに従って変数を詰めた後トランザクションクラスに渡し、結果を返す
+    * @param array $user ユーザー情報
+    * @param array $prize_char 入手キャラのステータス
+    * @param int $gacha_cost ガチャ費用(正の値)
+    * @param array $gachabox ガチャの配列
+    * @return boolean $result トランザクションの成否
     */
     public function putGachaResult($user, $prize_char, $gacha_cost, $gachabox)
     {
-        $record = $this->record->makeRecordStatus();
-        $char_put = $this->writeChar($user['user_id'], $prize_char, $record);
-        $user_update = $this->updateUser($user['user_id'], $gacha_cost, $record);
-
         $prize_index = $this->getPrizeIndex($prize_char['char_id'], $gachabox);
-        $gachabox_update = $this->updateGachaBox($user['user_id'], $prize_index, $record);
+
+        $prize_char['user_id'] = $user['user_id'];
+        $char_put = $this->a_char->getQueryPutChar($user['user_id'], $prize_char);
+        $user_update = $this->user->getQueryUpdateUserUseMoney($user, $gacha_cost);
+        $gachabox_update = $this->gacha->getQueryUpdateGachaBox($user['user_id'], $prize_index);
+
         $requests = [
             $char_put,
             $user_update,
             $gachabox_update
         ];
 
-        $result = $this->trans->isTransSuccess($user, $record, $requests);
+        $result = $this->trans->isTransSuccess($user, $requests);
         return $result;
     }
 }

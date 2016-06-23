@@ -99,14 +99,14 @@ class UserModel extends DynamoDBHandler
             'user_id' => $user['user_id']
         ];
         $expression_attribute_values = [
-            ':gacha_cost' => [
+            ':cost' => [
                 'N' => (string)$cost
             ],
             ':record' => [
                 'S' => (string)$user['record']['update_date']
             ]
         ];
-        $update_expression = 'set money = money + :gacha_cost, #rec.update_date = :record';
+        $update_expression = 'set money = money - :cost, #rec.update_date = :record';
         $expression_attribute_names = [
             '#rec' => 'record'
         ];

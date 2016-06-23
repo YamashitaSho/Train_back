@@ -102,9 +102,29 @@ class CharDBModel extends DynamoDBHandler
      * @param array $char 更新後のキャラデータ
      * @return array $put ユーザーデータを更新する命令
      */
-    public function getQueryPutChar($user_id, $char)
+    public function getQueryUpdateChar($user_id, $char)
     {
         $char['record'] = $this->record->updateRecordStatus($char['record']);
+        $put = [
+            'TableName' => 'a_chars',
+            'Key' => $this->marshaler->marshalItem([
+                'user_id' => (int)$user_id,
+                'char_id' => (int)$char['char_id']
+            ]),
+            'Item' => $this->marshaler->marshalItem($char)
+        ];
+        return $put;
+    }
+
+
+    /**
+     * キャラ作成情報の作成
+     * @param int $user_id ユーザーID
+     * @param array $char 作成後のキャラデータ
+     */
+    public function getQueryPutChar($user_id, $char)
+    {
+        $char['record'] = $this->record->makeRecordStatus();
         $put = [
             'TableName' => 'a_chars',
             'Key' => $this->marshaler->marshalItem([

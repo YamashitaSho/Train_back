@@ -77,35 +77,6 @@ class CharLoader
     }
 
 
-    public function importStatus()
-    {
-        if (empty($this->statuses)){
-            $records = $this->getAll();
-            foreach ($records as $key => $line){
-                #インデックスの取得
-                if ($key == 0){
-                    $index = array_flip($line);
-                    continue;
-                }
-                #データ整形
-                $this->statuses[$line[$index['char_id']]] = [
-                    'char_id' => (int)$line[$index['char_id']],
-                    'level' => (int)$line[$index['level']],
-                    'exp' => (int)$line[$index['exp']],
-                    'name' => $line[$index['name']],
-                    'status' => [
-                        'attack' => (int)$line[$index['attack']],
-                        'endurance' => (int)$line[$index['endurance']],
-                        'agility' => (int)$line[$index['agility']],
-                        'debuf' => (int)$line[$index['debuf']],
-                    ],
-                ];
-            }
-        }
-        return $this->statuses;
-    }
-
-
     /**
      * キャラのマスタからガチャの重みの配列を取得し、返す。
      * @return array $weights char_idをキーとする重みの配列
@@ -127,8 +98,10 @@ class CharLoader
      */
     public function getChar($char_id)
     {
-        $all_chars = $this->importStatus();
-        return $all_chars[$char_id];
+        $index = $this->customIndexes('status');
+        $all_chars = $this->importAll();
+        $char = $this->narrowingIndex($all_chars[$char_id], $index);
+        return $char;
     }
 
 
@@ -143,18 +116,29 @@ class CharLoader
         $index = $this->customIndexes($keyword);
         $all_chars = $this->importAll();
         foreach($char_ids as $char_id){
-            if (empty($index)){
-                #インデックスの指定なし
-                $chars[] = $all_chars[$char_id['char_id']];
-            } else {
-                $buf = [];
-                foreach($index as $key){
-                    $buf[$key] = $all_chars[$char_id['char_id']][$key];
-                }
-                $chars[] = $buf;
-            }
+            $chars[] = $this->narrowingIndex($all_chars[$char_id['char_id']], $index);
         }
         return $chars;
+    }
+
+
+    /**
+     * インデックスに従って返すパラメータを絞り込む
+     * @param array $char キャラの全パラメータ
+     * @param array $index 返すパラメータの情報
+     * @return array $narrowed_char 絞り込み後のキャラのパラメータ
+     */
+    private function narrowingIndex($char, $index)
+    {
+        $narrowed_char = [];
+        if (empty($index)){
+            $narrowed_char = $char;
+        } else {
+            foreach ($index as $key){
+                $narrowed_char[$key] = $char[$key];
+            }
+        }
+        return $narrowed_char;
     }
 
 

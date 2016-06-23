@@ -14,6 +14,8 @@ class BattleModel extends DynamoDBHandler
 
         parent::__construct();
     }
+
+
     /**
     * パーティキャラを読み込む
     * $charsの各要素に対して'char_id'に対応するデータを読み込む
@@ -39,6 +41,8 @@ class BattleModel extends DynamoDBHandler
         $chars_master = $this->batchGetItem($get, 'Failed to read CharData(Master)');
         return $chars_master['chars'];
     }
+
+
     /**
     * バトル情報の読み込み
     */
@@ -56,6 +60,8 @@ class BattleModel extends DynamoDBHandler
         $battle = $this->getItem($get, ['Failed to read BattleData']);
         return $battle;
     }
+
+
     public function writeBattle($user, $battle)
     {
         $battle['record'] = $this->record->updateRecordStatus($battle['record']);
