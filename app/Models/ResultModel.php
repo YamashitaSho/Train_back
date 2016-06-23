@@ -53,7 +53,7 @@ class ResultModel extends DynamoDBHandler
     private function putChar($user, $char)
     {
         $char['user_id'] = $user['user_id'];
-        $put = $this->char->getQueryPutChar($user['user_id'], $char);
+        $put = $this->char->getQueryUpdateChar($user['user_id'], $char);
         return $put;
     }
 
@@ -61,10 +61,11 @@ class ResultModel extends DynamoDBHandler
 
     /**
     * [関数] ユーザーデータ書き込み変数の整形
+    * 獲得賞金は正なのでここで符号を反転される
     */
     private function updateUser($user, $prize)
     {
-        $update = $this->user->getQueryUpdateUserUseMoney($user, $prize);
+        $update = $this->user->getQueryUpdateUserUseMoney($user, 0 - $prize);
         return $update;
     }
 
@@ -94,15 +95,12 @@ class ResultModel extends DynamoDBHandler
         foreach($party as $char){
             $chars_update[] = $this->putChar($user, $char);
         }
-        $user_update = $this->updateUser($user, 0 - $prize);
+        $user_update = $this->updateUser($user, $prize);
         $battle_update = $this->updateBattle($user, $battle);
         $requests = $chars_update;
         $requests[] = $user_update;
         $requests[] = $battle_update;
-        $time_start = microtime(true);
         $result = $this->trans->isTransSuccess($user, $requests);
-        $time = microtime(true) - $time_start;
-        echo "{$time} sec";
         return $result;
     }
 }
