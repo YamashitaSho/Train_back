@@ -1,6 +1,7 @@
 <?php
 namespace App\Models;
 
+use App\Models\UserModel;
 use App\Models\CharDBModel;
 use App\Models\CharLoader;
 use App\Models\ItemLoader;
@@ -8,11 +9,21 @@ use App\Models\ItemLoader;
 
 class OrderModel
 {
-    public function __construct()
+    public function __construct($user_id)
     {
+        $this->user = new UserModel($user_id);
         $this->char = new CharDBModel();
         $this->item = new ItemDBModel();
         $this->charloader = new CharLoader();
+    }
+
+
+    /**
+     * ユーザー情報を読み込む
+     */
+    public function getUser()
+    {
+        return $this->user->getUser();
     }
 
 
@@ -34,9 +45,14 @@ class OrderModel
     }
 
 
-
     public function readItem($items)
     {
         return $this->item->getItems($items);
+    }
+
+
+    public function updateUser($user)
+    {
+        return $this->user->updateUser($user);
     }
 }
