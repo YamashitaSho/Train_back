@@ -6,7 +6,7 @@ use DateInterval;
 use Aws\DynamoDb\Exception\DynamoDbException;
 use App\Models\DynamoDBHandler;
 use Aws\DynamoDb\Marshaler;
-use App\Services\Record;
+use App\Services\Common\Record;
 
 class TransactionModel extends DynamoDBHandler
 {
@@ -170,6 +170,7 @@ class TransactionModel extends DynamoDBHandler
             }
             #ロックを解除
         }
+
         #書き込み成功
         if ($is_success){
             #掃除
@@ -421,7 +422,7 @@ class TransactionModel extends DynamoDBHandler
         $put = [
             'TableName' => $tablename,
             'Key' => $key,
-            'Item' => $present_data
+            'Item' => $this->marshaler->marshalItem($present_data)
         ];
         do{
             try {
