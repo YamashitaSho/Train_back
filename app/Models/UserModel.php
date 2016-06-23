@@ -1,11 +1,12 @@
 <?php
 namespace App\Models;
 
+use Aws\DynamoDb\Marshaler;
 use App\Models\DynamoDBHandler;
 use App\Services\Common\Record;
 
     /**
-    * ユーザー情報に関わるクラス
+    * [CLASS]ユーザー情報に関わるクラス
     *
     * ユーザーデータにアクセスする方法が共通なものをまとめたクラス。
     */
@@ -22,7 +23,7 @@ class UserModel extends DynamoDBHandler
         $this->user = [];
         $this->is_read = 0;
         $this->record = new Record();
-
+        $this->marshaler = new Marshaler();
     }
 
 
@@ -60,7 +61,7 @@ class UserModel extends DynamoDBHandler
      */
     public function updateUser($user)
     {
-        $put = $this->getQueryUpdateUser($user);
+        $put = $this->getQueryPutUser($user);
         $this->putItem($put);
     }
 
@@ -70,7 +71,7 @@ class UserModel extends DynamoDBHandler
      * @param array $user 更新後のユーザーデータ
      * @return array $put ユーザーデータを更新する命令
      */
-    public function getQueryUpdateUser($user)
+    public function getQueryPutUser($user)
     {
         $user['record'] = $this->record->updateRecordStatus($user['record']);
         $key = [
@@ -82,5 +83,40 @@ class UserModel extends DynamoDBHandler
             'Item' => $this->marshaler->marshalItem($user),
         ];
         return $put;
+    }
+
+
+    /**
+     * ユーザー更新情報の作成
+     * @param array $user 更新後のユーザーデータ
+     * @param int $cost 消費したmoney
+     * @return array $put ユーザーデータを更新する命令
+     */
+    public function getQueryUpdateUserUseMoney($user, $cost)
+    {
+        $user['record'] = $this->record->updateRecordStatus($user['record']);
+        $key = [
+            'user_id' => $user['user_id']
+        ];
+        $expression_attribute_values = [
+            ':gacha_cost' => [
+                'N' => (string)$cost
+            ],
+            ':record' => [
+                'S' => (string)$user['record']['update_date']
+            ]
+        ];
+        $update_expression = 'set money = money + :gacha_cost, #rec.update_date = :record';
+        $expression_attribute_names = [
+            '#rec' => 'record'
+        ];
+        $update = [
+            'TableName' => 'a_users',
+            'Key' => $this->marshaler->marshalItem($key),
+            'ExpressionAttributeValues' => $expression_attribute_values,
+            'UpdateExpression' => $update_expression,
+            'ExpressionAttributeNames' => $expression_attribute_names
+        ];
+        return $update;
     }
 }

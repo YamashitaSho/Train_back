@@ -3,6 +3,7 @@ namespace App\Models;
 
 use Aws\DynamoDb\Marshaler;
 use App\Models\DynamoDBHandler;
+use App\Services\Common\Record;
 
 class CharDBModel extends DynamoDBHandler
 {
@@ -10,6 +11,7 @@ class CharDBModel extends DynamoDBHandler
     {
         parent::__construct();
         $this->marshaler = new Marshaler();
+        $this->record = new Record();
     }
 
 
@@ -60,14 +62,17 @@ class CharDBModel extends DynamoDBHandler
     {
         $key = [];
         foreach($user['party'] as $char){
-            $key[] = [
-                'user_id' => [
-                    'N' => (string)$user['user_id']
-                ],
-                'char_id' => [
-                    'N' => (string)$user['char_id']
-                ],
-            ];
+            #キャラID0は欠番
+            if ($char['char_id'] != 0){
+                $key[] = [
+                    'user_id' => [
+                        'N' => (string)$user['user_id']
+                    ],
+                    'char_id' => [
+                        'N' => (string)$char['char_id']
+                    ],
+                ];
+            }
         }
         if (empty($key)){
             return [];
@@ -85,8 +90,29 @@ class CharDBModel extends DynamoDBHandler
                 ]
             ]
         ];
-        $result = $this->batchGetItem($get, 'Failed to Read Chardata');
+        $result = $this->batchGetItem($get);
         $chars = $result['a_chars'];
         return $chars;
+    }
+
+
+    /**
+     * キャラ更新情報の作成
+     * @param int $user_id 所持しているユーザーのユーザーID
+     * @param array $char 更新後のキャラデータ
+     * @return array $put ユーザーデータを更新する命令
+     */
+    public function getQueryPutChar($user_id, $char)
+    {
+        $char['record'] = $this->record->updateRecordStatus($char['record']);
+        $put = [
+            'TableName' => 'a_chars',
+            'Key' => $this->marshaler->marshalItem([
+                'user_id' => (int)$user_id,
+                'char_id' => (int)$char['char_id']
+            ]),
+            'Item' => $this->marshaler->marshalItem($char)
+        ];
+        return $put;
     }
 }

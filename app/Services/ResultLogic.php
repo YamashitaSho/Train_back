@@ -9,8 +9,7 @@ class Resultlogic extends Model
 {
     public function __construct($user_id)
     {
-        $this->userinfo = new UserModel($user_id);
-        $this->result = new ResultModel();
+        $this->result = new ResultModel($user_id);
     }
     /**
     * [API] バトル結果表示、反映APIの関数
@@ -21,7 +20,7 @@ class Resultlogic extends Model
     public function getResult()
     {
         # ユーザー情報の取得
-        $user = $this->userinfo->getUser();
+        $user = $this->result->getUser();
         # バトル情報の取得
         $battle = $this->result->getBattleData($user);
 
@@ -54,7 +53,7 @@ class Resultlogic extends Model
         //更新するキャラ情報の取得
         $party = $this->mergeCharsStatus($user, $battle);
         //トランザクションで更新
-        $this->result->putBattleResult($user, $party, $battle);
+        $success = $this->result->putBattleResult($user, $party, $battle);
         switch ($battle['type']){
             case ('quest'):
                 //クエストは1戦で終了
@@ -69,6 +68,7 @@ class Resultlogic extends Model
                 //最後のバトルなのでアリーナをクリアした処理として終了
                 break;
         }
+        return $success;
     }
 
 
