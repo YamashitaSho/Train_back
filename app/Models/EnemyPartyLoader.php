@@ -64,6 +64,17 @@ class EnemyPartyLoader extends Model
 
 
     /**
+     * 敵PTを一つ取得する
+     * @param int $enemyparty_id
+     */
+    public function getEnemyParty($enemyparty_id)
+    {
+        $enemyparties = $this->importAll();
+        return $enemyparties[$enemyparty_id];
+    }
+
+
+    /**
      * 敵パーティIDの配列から敵パーティ情報の配列を返す
      * @param array $enemyparty_ids 敵パーティIDの配列
      * @return array $res 敵パーティの配列
