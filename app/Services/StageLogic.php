@@ -2,7 +2,6 @@
 namespace App\Services;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\UserModel;
 use App\Models\StageModel;
 use App\Models\EnemyLoader;
 use App\Models\EnemyPartyLoader;
@@ -16,8 +15,7 @@ class StageLogic extends Model
 {
     public function __construct($user_id)
     {
-        $this->stage = new StageModel();
-        $this->userinfo = new UserModel($user_id);
+        $this->stage = new StageModel($user_id);
         $this->enemy = new EnemyLoader();
         $this->enemyparty = new EnemyPartyLoader();
     }
@@ -28,7 +26,7 @@ class StageLogic extends Model
      */
     public function getBattlelist()
     {
-        $user = $this->userinfo->getUser();
+        $user = $this->stage->getUser();
         #キャラデータの読み込み
         $chars = $this->stage->readCharInParty($user);
         #アリーナクリア情報のチェック
@@ -45,8 +43,8 @@ class StageLogic extends Model
         #返信するデータに変形
         $stages = [];
         foreach($arenas as $key => $arena){
-            $stage[$key] = [
-
+            $stages[$key] = [
+                $arena['arena']+$arena['entry_fee']
             ];
         }
         $response = [
@@ -63,7 +61,7 @@ class StageLogic extends Model
      */
     public function joinBattle()
     {
-        $user = $this->userinfo->getUser();
+        $user = $this->stage->getUser();
         #進行中のバトルがないかを検証
         if ($this->canMakeBattle($user)){
             #ユーザーのアリーナクリア状況のバリデーション
@@ -86,7 +84,7 @@ class StageLogic extends Model
             #味方キャラの取得
             $friends = $this->stage->readCharInParty($user);
             #敵キャラの取得
-            $enemies = $this->getEnemies($arena['arena']['enemyparty_id']);
+            $enemies = $this->stage->getEnemies($arena['arena']['enemyparty_id']);
             $this->stage->transBattle($user, $friends, $enemies, $arena, 'arena0');
         }
         $response = [
@@ -110,28 +108,6 @@ class StageLogic extends Model
             }
         }
         return $res;
-    }
-
-
-    /**
-     * セットするアリーナのデータを読み込む
-     * @param
-     */
-    private function getArena($request)
-    {
-        return $this->stage->getArena($request['arena_id']);
-    }
-
-
-    /**
-     * 敵PTを読み込む
-     * @param array [enemyparty_ids]
-     */
-    private function getEnemies($enemyparty_ids)
-    {
-        $parties = $this->enemyparty->getPartyStatus($enemyparty_ids);
-        $enemy = $this->enemy->getEnemyStatus($parties[0]['enemy_id']);
-        return $enemy;
     }
 
 }
