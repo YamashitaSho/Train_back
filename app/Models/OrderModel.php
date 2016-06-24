@@ -12,7 +12,7 @@ class OrderModel extends Model
 {
     public function __construct($user_id)
     {
-        $this->user = new UserModel($user_id);
+        $this->a_user = new UserModel($user_id);
         $this->char = new CharDBModel();
         $this->charloader = new CharLoader();
     }
@@ -23,7 +23,7 @@ class OrderModel extends Model
      */
     public function getUser()
     {
-        return $this->user->getUser();
+        return $this->a_user->getUser();
     }
 
 
@@ -53,6 +53,6 @@ class OrderModel extends Model
 
     public function updateUser($user)
     {
-        return [];
+        return $this->a_user->updateUser($user);
     }
 }
