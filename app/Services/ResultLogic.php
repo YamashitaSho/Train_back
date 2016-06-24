@@ -9,7 +9,7 @@ class Resultlogic extends Model
 {
     public function __construct($user_id)
     {
-        $this->result = new ResultModel($user_id);
+        $this->model = new ResultModel($user_id);
     }
     /**
     * [API] バトル結果表示、反映APIの関数
@@ -20,9 +20,9 @@ class Resultlogic extends Model
     public function getResult()
     {
         # ユーザー情報の取得
-        $user = $this->result->getUser();
+        $user = $this->model->getUser();
         # バトル情報の取得
-        $battle = $this->result->getBattleData($user);
+        $battle = $this->model->getBattleData($user);
 
         return $this->makeResponse($user, $battle);
     }
@@ -79,8 +79,8 @@ class Resultlogic extends Model
         //戦闘後のキャラ情報の取得
         $party = $this->getCharStatusAfterBattle($user, $battle);
         //トランザクションで更新
-        //$success = $this->result->putBattleResult($user, $party, $battle);
-        $success =true;
+        $success = $this->model->putBattleResult($user, $party, $battle);
+        $success = true;
         if ($success){
             $this->checkNextBattle($user, $battle);
         }
@@ -98,7 +98,7 @@ class Resultlogic extends Model
         $merged_chars = [];
         $obtain_chars = [];
         // 変更前のキャラステータス
-        $party = $this->result->getBattleChar($user['user_id'], $battle['obtained']['chars']);
+        $party = $this->model->getBattleChar($user['user_id'], $battle['obtained']['chars']);
 
         //インデックスをchar_idに変更
         foreach($battle['obtained']['chars'] as $obtained_char){
@@ -152,19 +152,20 @@ class Resultlogic extends Model
         #進行するアリーナの取得
         $arena = $battle['arena'];
         #味方キャラの取得
-        $friends = $this->result->readCharInParty($user);
+        $friends = $this->model->readCharInParty($user);
         #敵キャラの取得
-        $enemies = $this->result->getEnemies($arena['arena']['enemyparty_id'], $type);
+        $enemies = $this->model->getEnemies($arena['arena']['enemyparty_id'], $type);
         #トランザクションでバトルを作成
-        return $this->stage->transBattle($user, $friends, $enemies, $arena, 'arena'.$type);
+        return $this->model->transBattle($user, $friends, $enemies, $arena, 'arena'.$type);
     }
 
 
     /**
      * [Method] バトルがクローズドだった時の処理
-     * 結果返信のみ
+     * 連戦が設定されている場合は再発行する
      */
     private function caseClosed($user, $battle){
+        $this->checkNextBattle($user, $battle);
         return [$this->setResponseBody($user, $battle), 201];
     }
 
