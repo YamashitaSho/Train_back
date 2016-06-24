@@ -71,7 +71,7 @@ class QuestModel extends Model
     public function postBattle($user, $friends, $enemies)
     {
         $request = [
-            $this->battle->getQueryPutBattle($user, $friends, $enemies),
+            $this->battle->getQueryPutBattle($user, $friends, $enemies, 'quest'),
             $this->user->getQueryPutUser($user)
         ];
         return $this->trans->isTransSuccess($user, $request);
