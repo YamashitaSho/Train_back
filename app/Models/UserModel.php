@@ -58,11 +58,12 @@ class UserModel extends DynamoDBHandler
     /**
      * ユーザー情報の更新
      * @param array $user 更新後のユーザーデータ
+     * @return object DynamoDBの更新結果
      */
     public function updateUser($user)
     {
         $put = $this->getQueryPutUser($user);
-        $this->putItem($put);
+        return $this->putItem($put);
     }
 
 
