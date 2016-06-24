@@ -4,7 +4,6 @@ namespace App\Services;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use App\Models\OrderModel;
-use App\Models\UserModel;
 
 class OrderLogic extends Model
 {
@@ -21,8 +20,7 @@ class OrderLogic extends Model
 
     public function __construct($user_id)
     {
-        $this->order = new OrderModel();
-        $this->userinfo = new UserModel($user_id);
+        $this->model = new OrderModel($user_id);
     }
 
 
@@ -33,17 +31,17 @@ class OrderLogic extends Model
     public function getOrder()
     {
         #ユーザー情報を読み込む
-        $user = $this->userinfo->getUser();
+        $user = $this->model->getUser();
         #所持キャラ
-        $chars = $this->order->readChar($user['user_id']);
+        $chars = $this->model->readChar($user['user_id']);
         if (!empty($chars)) {
             #所持キャラのマスタ
-            $chars_master = $this->order->readCharMaster($chars);
+            $chars_master = $this->model->getCharsStatusMax($chars);
             #キャラデータをマスタと統合
             $chars = $this->combineCharData($chars, $chars_master);
         }
         #アイテムデータ
-        $items = $this->order->readItem($user['items']);
+        $items = $this->model->readItem($user['items']);
 
         if (empty($user['party'])){
             $user['party'] = [['char_id' => 0],['char_id' => 0],['char_id' => 0]];
@@ -67,7 +65,7 @@ class OrderLogic extends Model
         $request = \Request::all();
         $response = [];
         #ユーザー情報を読み込む
-        $user = $this->userinfo->getUser();
+        $user = $this->model->getUser();
         #URIのリクエストタイプを判別
 
         $request_type = $this->checkType($type);
@@ -172,7 +170,7 @@ class OrderLogic extends Model
         }
         #隊列入れ替え、書き込み
         $user['party'][$request['slot']][$type] = $request['new_id'];
-        $this->order->updateUser($user);
+        $this->model->updateUser($user);
 
         return [$request, 201];
     }
@@ -196,7 +194,7 @@ class OrderLogic extends Model
 
         #キャラの所持チェック
         #ユーザーが保持しているキャラ情報を読み込む(char_idのみ[第2引数で指定]
-        $chars = $this->order->readChar($user['user_id'], true);
+        $chars = $this->model->readChar($user['user_id'], true);
         do {
             #所持チェック
             if ( !$this->isPossess($chars, $request['new_id'], $type) ){
@@ -210,7 +208,7 @@ class OrderLogic extends Model
             }
             #隊列入れ替え、書き込み
             $user['party'][$request['slot']][$type] = $request['new_id'];
-            $this->order->updateUser($user);
+            $this->model->updateUser($user);
         } while (false);
 
         return $response;

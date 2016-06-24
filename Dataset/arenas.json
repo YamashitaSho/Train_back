@@ -14,7 +14,8 @@
       "item_id": 0
     }
   }
-},{
+},
+{
   "arena_id" : 1,
   "entry_fee": {
     "first": 100,
@@ -29,7 +30,8 @@
       "item_id": 0
     }
   }
-},{
+},
+{
   "arena_id" : 2,
   "entry_fee": {
     "first": 100,
@@ -44,7 +46,8 @@
       "item_id": 0
     }
   }
-},{
+},
+{
   "arena_id" : 3,
   "entry_fee": {
     "first": 100,
@@ -59,7 +62,8 @@
       "item_id": 0
     }
   }
-},{
+},
+{
   "arena_id" : 4,
   "entry_fee": {
     "first": 100,
@@ -74,7 +78,8 @@
       "item_id": 0
     }
   }
-},{
+},
+{
   "arena_id" : 5,
   "entry_fee": {
     "first": 100,
@@ -89,7 +94,8 @@
       "item_id": 0
     }
   }
-},{
+},
+{
   "arena_id" : 6,
   "entry_fee": {
     "first": 100,

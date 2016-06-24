@@ -1,188 +1,79 @@
 <?php
 namespace App\Models;
 
-use Aws\DynamoDb\Marshaler;
-use App\Models\DynamoDBHandler;
+use Illuminate\Database\Eloquent\Model;
+
+use App\Models\UserModel;
 use App\Models\TransactionModel;
-use App\Services\Common\Record;
+use App\Models\BattleDBModel;
+use App\Models\CharDBModel;
+use App\Models\EnemyLoader;
+use App\Models\EnemyPartyLoader;
+
 
 /**
  * [Class] クエストに関わるModelクラス
  *
  * 未実装項目 バトル発行はトランザクション処理として行う
  */
-class QuestModel extends DynamoDBHandler
+class QuestModel extends Model
 {
-    public function __construct()
+    public function __construct($user_id)
     {
-        parent::__construct();
-        $this->marshaler = new Marshaler();
-        $this->record = new Record();
         $this->trans = new TransactionModel();
+        $this->user = new UserModel($user_id);
+        $this->battle = new BattleDBModel();
+        $this->char = new CharDBModel();
+        $this->enemy = new EnemyLoader();
+        $this->enemyparty = new EnemyPartyLoader();
     }
 
 
-    /**
-     * [Method] バトル情報を読み込む
-     * @param $user ユーザー情報
-     */
-    public function readBattle($user)
+    public function getUser()
     {
-        $key = [
-            'user_id' => [
-                'N' => (string)$user['user_id']
-            ],
-            'battle_id' => [
-                'N' => (string)$user['battle_id']
-            ]
-        ];
-        $get = [
-            'TableName' => 'a_battles',
-            'Key' => $key,
-            'ProjectionExpression' => 'progress'
-        ];
-        $result = $this->getItem($get, 'Failed to Read Battlelog');
-        return $result;
+        return $this->user->getUser();
     }
 
 
-    /**
-    * [Method] 敵パーティを読み込む
-    * @param $enemyparty_id int 敵パーティを指定するID
-    */
-    public function readEnemyParty($enemyparty_id)
+    public function getBattleData($user)
     {
-        $key = [
-            'enemyparty_id' => [
-                'N' => (string)$enemyparty_id
-            ]
-        ];
-        $get = [
-            'TableName' => 'enemyparties',
-            'Key' => $key
-        ];
-        $enemyparty = $this->getItem($get, 'Failed to Read Enemyparty');
-        return $enemyparty;
+        return $this->battle->getBattleByUser($user);
     }
 
 
     /**
     * 敵キャラデータを読み込む
     * @param $party array charの配列
-    * @param $char array enemy_idを含むキャラ情報
     */
     public function readEnemy($party)
     {
-        $key = [];
-        foreach ($party as $char){
-            $key[] = [
-                'enemy_id' => [
-                    'N' => (string)$char['enemy_id']
-                ]
-            ];
-        }
-        $get = [
-            'RequestItems' => [
-                'enemies' => [
-                    'Keys' => $key,
-                    'ProjectionExpression' => 'char_id, exp, #nm, #lv, #st',
-                    'ExpressionAttributeNames' => [
-                        '#lv' => 'level',
-                        '#st' => 'status',
-                        '#nm' => 'name',
-                    ]
-                ]
-            ]
-        ];
-        $enemies = $this->batchGetItem($get, 'Failed to Read Enemydata');
-        return $enemies['enemies'];
+        return $this->enemy->getEnemyStatus($party);
     }
 
+
+    public function getAllEnemyParties()
+    {
+        return $this->enemyparty->importAll();
+    }
 
     /**
     * [Method] 味方キャラデータを読み込む
     */
     public function readCharInParty($user)
     {
-        $key = [];
-        foreach ($user['party'] as $char){
-            if ($char['char_id'] != 0){     //キャラID 0 は読み込まない
-                $key[] = [
-                    'user_id' => [
-                        'N' => (string)$user['user_id']
-                    ],
-                    'char_id' => [
-                        'N' => (string)$char['char_id']
-                    ]
-                ];
-            }
-        }
-        if ( empty($key) ){
-            return [];
-        }
-        $get = [
-            'RequestItems' => [
-                'a_chars' => [
-                    'Keys' => $key,
-                    'ProjectionExpression' => 'char_id, exp, #lv, #st, #nm',
-                    'ExpressionAttributeNames' => [
-                        '#lv' => 'level',
-                        '#st' => 'status',
-                        '#nm' => 'name',
-                    ]
-                ]
-            ]
-        ];
-        $result = $this->batchGetItem($get, 'Failed to Read Chardata');
-        return $result['a_chars'];
+        return $this->char->readCharInParty($user);
     }
 
 
     /**
-    * [Method] バトルテーブルへバトルの初期状態を書き込む
-    */
-    public function writeBattle($user, $friends, $enemies)
+     * バトル作成のトランザクション実行
+     */
+    public function postBattle($user, $friends, $enemies)
     {
-        $item = [
-            "user_id" => $user['user_id'],
-            "battle_id" => $user['battle_id'],
-            "progress" => "created",
-            "friend_position" => $friends,
-            "enemy_position" => $enemies,
-            "record" => $this->record->makeRecordStatus(),
-            "type" => "quest",
+        $request = [
+            $this->battle->getQueryPutBattle($user, $friends, $enemies, 'quest'),
+            $this->user->getQueryPutUser($user)
         ];
-        $key = [
-            'user_id' => $user['user_id'],
-            'battle_id'=> $user['battle_id']
-        ];
-        $put = [
-            'TableName' => 'a_battles',
-            'Key' => $this->marshaler->marshalItem($key),
-            'Item' => $this->marshaler->marshalItem($item),
-        ];
-        $result = $this->putItem($put, 'Failed to Write BattleData');
-        return $result;
-    }
-
-
-    /**
-    * [Method] ユーザーテーブルへバトル情報を書き込む
-    */
-    public function writeUser($user)
-    {
-        $user['record'] = $this->record->updateRecordStatus($user['record']);
-        $item = $user;
-        $key = [
-            'user_id' => $user['user_id']
-        ];
-        $put = [
-            'TableName' => 'a_users',
-            'Key' => $this->marshaler->marshalItem($key),
-            'Item' => $this->marshaler->marshalItem($item),
-        ];
-        $result = $this->putItem($put, 'Failed to Write UserData');
-
-        return $result;
+        return $this->trans->isTransSuccess($user, $request);
     }
 }

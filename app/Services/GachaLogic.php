@@ -2,9 +2,7 @@
 namespace App\Services;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\UserModel;
 use App\Models\GachaModel;
-use App\Models\CharLoader;
 
 class GachaLogic extends Model
 {
@@ -19,15 +17,14 @@ class GachaLogic extends Model
         300,
         200
     ];
-    private $usermodel;
     private $gacha;
+
 
     public function __construct($user_id)
     {
-        $this->gacha = new GachaModel();
-        $this->usermodel = new UserModel($user_id);
-        $this->charloader = new CharLoader();
+        $this->gacha = new GachaModel($user_id);
     }
+
 
     /**
     * [関数] ガチャが引けるかどうかをチェックするAPIで呼び出される関数
@@ -35,7 +32,7 @@ class GachaLogic extends Model
     public function checkGacha()
     {
         #ユーザー情報
-        $user = $this->usermodel->getuser();
+        $user = $this->gacha->getuser();
 
         #重み配列を読み込む
         $gachabox = $this->getGachaBox($user['user_id']);
@@ -54,13 +51,14 @@ class GachaLogic extends Model
         return [$response, 200];
     }
 
+
     /**
     * [関数] ガチャを引くAPIで呼び出される関数
     */
     public function drawGacha()
     {
         #ユーザー情報
-        $user = $this->usermodel->getuser();
+        $user = $this->gacha->getuser();
 
         #重み配列を読み込む
         $gachabox = $this->getGachaBox($user['user_id']);
@@ -98,14 +96,14 @@ class GachaLogic extends Model
     private function getGachaBox($user_id)
     {
 
-        $gachabox = $this->gacha->readGachaBox($user_id);
+        $gachabox = $this->gacha->getGachaBox();
         #ガチャ配列が保存されていない
         if (empty($gachabox)){
 
             #実際のガチャ配列
             $gachabox = $this->makeGachaBox($user_id);
             #ガチャ配列を保存しておく
-            $this->gacha->putGachaBox($user_id, $gachabox);
+            $this->gacha->putGachaBox($gachabox);
         }
 
         return $gachabox;
@@ -121,14 +119,15 @@ class GachaLogic extends Model
     private function makeGachaBox($user_id)
     {
         #全キャラの重み配列
-        $gachabox = $this->charloader->getWeights();
+        $gachabox = $this->gacha->getWeights();
         #手持ちキャラのリスト
-        $own_chars = $this->gacha->readChar($user_id);
+        $own_chars = $this->gacha->readChar();
         foreach ($own_chars as $own_char){
             $gachabox[$own_char['char_id']] = 0;
         }
         return $gachabox;
     }
+
 
     /**
     * [関数] ガチャで排出されるキャラの数を返す
@@ -143,6 +142,8 @@ class GachaLogic extends Model
         }
         return $rest_char;
     }
+
+
     /**
     * [関数] ガチャの使用料金を返す
     */
@@ -158,6 +159,8 @@ class GachaLogic extends Model
 
         return $gacha_cost;
     }
+
+
     /**
     * [関数] ガチャが使用可能かどうか判定する
     * @return $availability : boolean
@@ -170,6 +173,7 @@ class GachaLogic extends Model
         }
         return $availability;
     }
+
 
     /**
     * [関数] ガチャの抽選を行う
@@ -185,7 +189,7 @@ class GachaLogic extends Model
             $gacha_rand -= $gachabox[$i];
         }
 
-        $prize_char = $this->charloader->getChar($prize_id);
+        $prize_char = $this->gacha->getChar($prize_id);
         return $prize_char;
     }
 

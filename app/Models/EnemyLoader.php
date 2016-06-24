@@ -1,9 +1,11 @@
 <?php
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
+
 use SplFileObject;
 
-class EnemyLoader
+class EnemyLoader extends Model
 {
     #このクラスで扱うファイルパス
     private $path = "../Dataset/enemies.csv";
@@ -73,8 +75,10 @@ class EnemyLoader
     {
         $enemies = $this->importAll();
         foreach($enemy_ids as $enemy_id){
-            $res[] = $this->enemies[$enemy_id];
+            $res[] = $this->enemies[$enemy_id['enemy_id']];
         }
         return $res;
     }
+
+
 }

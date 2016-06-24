@@ -1,9 +1,11 @@
 <?php
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
+
 use SplFileObject;
 
-class EnemyPartyLoader
+class EnemyPartyLoader extends Model
 {
     #このクラスで扱うファイルパス
     private $path = "../Dataset/enemyparties.csv";
@@ -48,16 +50,27 @@ class EnemyPartyLoader
                 $this->enemyparties[$line[$index['enemyparty_id']]] = [
                     'enemyparty_id' => $line[$index['enemyparty_id']],
                     'text' => $line[$index['text']],
-                    'enemy_id' => [
-                        $line[$index['enemy_id1']],
-                        $line[$index['enemy_id2']],
-                        $line[$index['enemy_id3']]
+                    'party' => [
+                        ['enemy_id' => $line[$index['enemy_id1']]],
+                        ['enemy_id' => $line[$index['enemy_id2']]],
+                        ['enemy_id' => $line[$index['enemy_id3']]]
                     ],
                     'weight' => $line[$index['weight']]
                 ];
             }
         }
         return $this->enemyparties;
+    }
+
+
+    /**
+     * 敵PTを一つ取得する
+     * @param int $enemyparty_id
+     */
+    public function getEnemyParty($enemyparty_id)
+    {
+        $enemyparties = $this->importAll();
+        return $enemyparties[$enemyparty_id];
     }
 
 
