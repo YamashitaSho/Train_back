@@ -6,6 +6,8 @@ use App\Models\DynamoDBHandler;
 use App\Models\BattleDBModel;
 use App\Models\CharDBModel;
 use App\Models\UserModel;
+use App\Models\EnemyLoader;
+use App\Models\EnemyPartyLoader;
 
 class ResultModel extends DynamoDBHandler
 {
@@ -13,9 +15,11 @@ class ResultModel extends DynamoDBHandler
     {
         parent::__construct();
         $this->trans = new TransactionModel();
-        $this->battle = new BattleDBModel();
-        $this->char = new CharDBModel();
-        $this->user = new UserModel($user_id);
+        $this->a_battle = new BattleDBModel();
+        $this->a_char = new CharDBModel();
+        $this->a_user = new UserModel($user_id);
+        $this->enemy = new EnemyLoader();
+        $this->enemyparty = new EnemyPartyLoader();
     }
 
 
@@ -25,7 +29,7 @@ class ResultModel extends DynamoDBHandler
      */
     public function getUser()
     {
-        return $this->user->getUser();
+        return $this->a_user->getUser();
     }
 
 
@@ -34,7 +38,7 @@ class ResultModel extends DynamoDBHandler
     */
     public function getBattleData($user)
     {
-        return $this->battle->getBattleByUser($user);
+        return $this->a_battle->getBattleByUser($user);
     }
 
 
@@ -43,7 +47,7 @@ class ResultModel extends DynamoDBHandler
      */
     public function getBattleChar($user_id, $party)
     {
-        return $this->battle->getBattleChar($user_id, $party);
+        return $this->a_battle->getBattleChar($user_id, $party);
     }
 
 
@@ -53,7 +57,7 @@ class ResultModel extends DynamoDBHandler
     private function putChar($user, $char)
     {
         $char['user_id'] = $user['user_id'];
-        $put = $this->char->getQueryUpdateChar($user['user_id'], $char);
+        $put = $this->a_char->getQueryUpdateChar($user['user_id'], $char);
         return $put;
     }
 
@@ -65,10 +69,9 @@ class ResultModel extends DynamoDBHandler
     */
     private function updateUser($user, $prize)
     {
-        $update = $this->user->getQueryUpdateUserUseMoney($user, 0 - $prize);
+        $update = $this->a_user->getQueryUpdateUserUseMoney($user, 0 - $prize);
         return $update;
     }
-
 
 
     /**
@@ -77,7 +80,7 @@ class ResultModel extends DynamoDBHandler
     private function updateBattle($user, $battle)
     {
         $battle['user_id'] = $user['user_id'];
-        $update = $this->battle->getQueryUpdateBattle($user['user_id'], $battle);
+        $update = $this->a_battle->getQueryUpdateBattle($user['user_id'], $battle);
         return $update;
     }
 
@@ -102,5 +105,38 @@ class ResultModel extends DynamoDBHandler
         $requests[] = $battle_update;
         $result = $this->trans->isTransSuccess($user, $requests);
         return $result;
+    }
+
+
+    public function readCharInParty($user)
+    {
+        return $this->a_char->readCharInParty($user);
+    }
+
+
+    /**
+     * 敵PTを読み込む
+     * @param array $enemyparty_ids [enemyparty_ids]
+     */
+    private function getEnemies($enemyparty_ids, $type)
+    {
+        $parties = $this->enemyparty->getPartyStatus($enemyparty_ids);
+        $enemy = $this->enemy->getEnemyStatus($parties[$type]['party']);
+        return $enemy;
+    }
+
+
+    /**
+     * バトル情報を書き込むトランザクションを実行
+     */
+    public function transBattle($user, $friends, $enemies, $arena, $type)
+    {
+        #バトルレコードの更新内容
+        $a_battle = $this->a_battle->getQueryPutBattle($user, $friends, $enemies, $type, $arena);
+        #ユーザーレコードの更新内容
+        $a_user = $this->a_user->getQueryPutUser($user);
+
+        $request = [$a_battle, $a_user];
+        return $this->trans->isTransSuccess($user, $request);
     }
 }
