@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\UserModel;
 use App\Models\CharDBModel;
 use App\Models\CharLoader;
-use App\Models\ItemLoader;
 
 
 class OrderModel extends Model
@@ -15,7 +14,6 @@ class OrderModel extends Model
     {
         $this->user = new UserModel($user_id);
         $this->char = new CharDBModel();
-        $this->item = new ItemDBModel();
         $this->charloader = new CharLoader();
     }
 
@@ -49,12 +47,12 @@ class OrderModel extends Model
 
     public function readItem($items)
     {
-        return $this->item->getItems($items);
+        return [];
     }
 
 
     public function updateUser($user)
     {
-        return $this->user->updateUser($user);
+        return [];
     }
 }
