@@ -7,7 +7,7 @@ use App\Services\Common\Record;
 
 class ArenaLoader extends DynamoDBHandler
 {
-    private $path = '../Dataset/Data/arenas.json';
+    private $path = '../Dataset/arenas.json';
     private $arenas = [];
 
     public function importAll()
