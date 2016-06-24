@@ -84,9 +84,11 @@ class BattleDBModel extends DynamoDBHandler
      * @param array $user ユーザー情報
      * @param array $friends 味方PT情報
      * @param array $enemies 敵PT情報
+     * @param string $type バトルのタイプ
+     * @param array $arena アリーナ用のデータ
      * @return array $put バトルデータ作成情報
      */
-    public function getQueryPutBattle($user, $friends, $enemies)
+    public function getQueryPutBattle($user, $friends, $enemies, $type, $arena = [])
     {
         $item = [
             "user_id" => $user['user_id'],
@@ -95,8 +97,11 @@ class BattleDBModel extends DynamoDBHandler
             "friend_position" => $friends,
             "enemy_position" => $enemies,
             "record" => $this->record->makeRecordStatus(),
-            "type" => "quest",
+            "type" => $type,
         ];
+        if ($type != "quest"){
+            $item['arena'] = $arena;
+        }
         $key = [
             'user_id' => $user['user_id'],
             'battle_id'=> $user['battle_id']
