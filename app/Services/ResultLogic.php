@@ -78,14 +78,15 @@ class Resultlogic extends Model
         $battle['progress'] = 'closed';
         //戦闘後のキャラ情報の取得
         $party = $this->getCharStatusAfterBattle($user, $battle);
+        //連戦処理
+        $user = $this->checkNextBattle($user, $battle);
         //トランザクションで更新
         $success = $this->model->putBattleResult($user, $party, $battle);
-        $success = true;
         if ($success){
-            $this->checkNextBattle($user, $battle);
+            return [$this->setResponseBody($user, $battle), 201];
+        } else {
+            return ['Result was not saved', 500];
         }
-
-        return [$this->setResponseBody($user, $battle), 201];
     }
 
 
@@ -116,25 +117,26 @@ class Resultlogic extends Model
      */
     private function checkNextBattle($user, $battle)
     {
+        #バトルに負けていた場合は連戦なし
+        if (!$battle['is_win']){
+            return $user;
+        }
         switch ($battle['type']){
             case ('quest'):
                 //クエストは1戦で終了
-                return ;
+                return $user;
             case ('arena0'):
                 //バトルに勝利していればarena1のバトルを発行
-                if ($battle['is_win']){
-                    $this->runNextBattle($user, $battle, 1);
-                }
-                return ;
+                $this->runNextBattle($user, $battle, 1);
+                return $user;
             case ('arena1'):
                 //バトルに勝利していればarena2のバトルを発行
-                if ($battle['is_win']){
-                    $this->runNextBattle($user, $battle, 2);
-                }
-                return ;
+                $this->runNextBattle($user, $battle, 2);
+                return $user;
             case ('arena2'):
-                //最後のバトルなのでアリーナをクリアした処理として終了
-                return ;
+                //最後のバトルなのでアリーナをクリアした処理をして終了
+                $user = $this->setArenaCleared($user, $battle);
+                return $user;
         }
     }
 
@@ -164,21 +166,20 @@ class Resultlogic extends Model
      * [Method] バトルがクローズドだった時の処理
      * 連戦が設定されている場合は再発行する
      */
-    private function caseClosed($user, $battle){
+    private function caseClosed($user, $battle)
+    {
         $this->checkNextBattle($user, $battle);
         return [$this->setResponseBody($user, $battle), 201];
     }
 
 
-    /**
-     * [Method] 報酬金額の設定
-     */
-    private function setPrize($data)
+    private function setArenaCleared($user, $battle)
     {
-        $response = 0;
-        if ($data['type'] == 'quest'){
-            $response = $data['obtained']['gainexp'];
+        $arena = $battle['arena'];
+        if (empty($user['arena']) || ($user['arena'] <  1 + $arena['arena_id'])){
+            #クリア情報がない場合は新しく代入する
+            $user['arena'] = 1 + $arena['arena_id'];
         }
-        return $response;
+        return $user;
     }
 }
