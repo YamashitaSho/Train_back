@@ -73,7 +73,7 @@ class StageLogic extends Model
             #リクエストのバリデーション
             if (isset($this->request['arena_id'])){
                 if ($this->request['arena_id'] > $user['arena']){
-                    //Bad Request
+                    return ['bad request', 400];
                 }
             }
             #進行するアリーナの取得
