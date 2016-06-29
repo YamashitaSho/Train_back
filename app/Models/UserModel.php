@@ -105,9 +105,12 @@ class UserModel extends DynamoDBHandler
             ],
             ':record' => [
                 'S' => (string)$user['record']['update_date']
+            ],
+            ':arena' => [
+                'N' => (string)$user['arena']
             ]
         ];
-        $update_expression = 'set money = money - :cost, #rec.update_date = :record';
+        $update_expression = 'set money = money - :cost, arena = :arena, #rec.update_date = :record';
         $expression_attribute_names = [
             '#rec' => 'record'
         ];

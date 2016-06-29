@@ -2,9 +2,8 @@
 namespace App\Services;
 
 use Illuminate\Database\Eloquent\Model;
+
 use App\Models\StageModel;
-use App\Models\EnemyLoader;
-use App\Models\EnemyPartyLoader;
 use Illuminate\Http\Request;
 
 
@@ -16,8 +15,6 @@ class StageLogic extends Model
     public function __construct($user_id)
     {
         $this->stage = new StageModel($user_id);
-        $this->enemy = new EnemyLoader();
-        $this->enemyparty = new EnemyPartyLoader();
     }
 
 
@@ -76,7 +73,7 @@ class StageLogic extends Model
             #リクエストのバリデーション
             if (isset($this->request['arena_id'])){
                 if ($this->request['arena_id'] > $user['arena']){
-                    //Bad Request
+                    return ['bad request', 400];
                 }
             }
             #進行するアリーナの取得

@@ -71,10 +71,10 @@ class GachaDBModel extends DynamoDBHandler
             $count++;
         }
         $key = [
-            'user_id' => $user_id,
+            'user_id' => (int)$user_id,
         ];
         $item = [
-            'user_id' => $user_id,
+            'user_id' => (int)$user_id,
             'box' => $box,
             'record' => $record
         ];

@@ -1,19 +1,19 @@
 <?php
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
+
 use App\Models\TransactionModel;
-use App\Models\DynamoDBHandler;
 use App\Models\BattleDBModel;
 use App\Models\CharDBModel;
 use App\Models\UserModel;
 use App\Models\EnemyLoader;
 use App\Models\EnemyPartyLoader;
 
-class ResultModel extends DynamoDBHandler
+class ResultModel extends Model
 {
     public function __construct($user_id)
     {
-        parent::__construct();
         $this->trans = new TransactionModel();
         $this->a_battle = new BattleDBModel();
         $this->a_char = new CharDBModel();
@@ -117,8 +117,9 @@ class ResultModel extends DynamoDBHandler
     /**
      * 敵PTを読み込む
      * @param array $enemyparty_ids [enemyparty_ids]
+     * @param int $type アリーナの情報のうち読み込まれるウェーブ
      */
-    private function getEnemies($enemyparty_ids, $type)
+    public function getEnemies($enemyparty_ids, $type)
     {
         $parties = $this->enemyparty->getPartyStatus($enemyparty_ids);
         $enemy = $this->enemy->getEnemyStatus($parties[$type]['party']);
