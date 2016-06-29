@@ -158,10 +158,10 @@ class BattleLogic extends Model
             'enemy_hp' => $this->INITIAL_HP
         ];
         foreach ($battle_party['friend_position'] as $friend){
-            $battle_log['friend_hp'] += $friend['status']['endurance'];
+            $battle_log['friend_hp'] += $friend['status']['endurance'] * 2;
         }
         foreach ($battle_party['enemy_position'] as $enemy){
-            $battle_log['enemy_hp'] += $enemy['status']['endurance'];
+            $battle_log['enemy_hp'] += $enemy['status']['endurance'] * 2;
         }
         return $battle_log;
     }
@@ -230,7 +230,7 @@ class BattleLogic extends Model
 
         #デバフ処理
         for ($i=0 ; $i<3 ; $i++){
-            $debuf = $this->setRandom($active_char['debuf']/2);
+            $debuf = $this->setRandom($active_char['debuf']/3);
             $action['debuf'][$i] = $debuf;
 
             $target_attack = &$chars[ $i+$target['position'] ]['status']['attack'];
